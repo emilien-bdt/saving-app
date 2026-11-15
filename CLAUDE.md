@@ -11,22 +11,24 @@ Modules prévus (par ordre de priorité) :
 
 ## Utilisateur
 - Un seul utilisateur : moi (pas de multi-comptes au départ, mais une authentification simple pour protéger mes données)
-- Usage : [ordinateur / téléphone / les deux]
-- Niveau technique : [débutant / intermédiaire / avancé] → adapte tes explications en conséquence
+- Usage : ordinateur **et** téléphone (application en ligne)
+- Niveau technique : avancé → explications concises
 - Langue de l'interface : français ; devise : EUR ; format de date : JJ/MM/AAAA
 
 ## Stack technique
-- [À valider lors de la phase de planification. Proposition par défaut :]
-- Next.js (App Router) + TypeScript
-- Tailwind CSS + shadcn/ui
-- Base de données : SQLite via Prisma (migration vers PostgreSQL possible plus tard)
+- Next.js 16 (App Router) + TypeScript strict (`noUncheckedIndexedAccess`)
+- Tailwind CSS 4 + shadcn/ui (composants dans `src/shared/ui`)
+- Base de données : PostgreSQL via Prisma 7 (adapter `pg`) ; Docker en local, Neon en production
+- Validation : Zod ; dates : date-fns (locale `fr`)
 - Graphiques : Recharts
 - Tests : Vitest
-- Hébergement : [en local uniquement / en ligne (Vercel, VPS…)]
+- Hébergement : Vercel + Neon
 
 ## Architecture
 - Chaque domaine est un **module indépendant** (`/src/modules/finances`, `/src/modules/repas`…) avec son propre modèle de données, ses pages et sa logique.
 - Le code partagé (UI, auth, utilitaires) va dans `/src/shared`.
+- Un module = `src/modules/<nom>` (`domain/` logique pure testée, `data/` accès Prisma, `actions/` Server Actions + Zod, `components/`, `module.ts`) + son fichier `prisma/schema/<nom>.prisma` + une ligne dans `src/modules/registry.ts`.
+- Les fichiers de `src/app` restent fins : ils importent depuis les modules.
 - Ajouter un module ne doit pas obliger à modifier les autres.
 
 ## Règles métier – Finances
@@ -51,7 +53,18 @@ Modules prévus (par ordre de priorité) :
 - Tenir ce fichier à jour quand une décision importante est prise (section « Décisions » ci-dessous).
 
 ## Commandes
-- [Seront remplies après l'initialisation du projet : dev, build, test, migration]
+- `npm run db:up` / `db:down` : démarrer / arrêter Postgres (Docker)
+- `npm run dev` : serveur de développement (http://localhost:3000)
+- `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
+- `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio`
 
 ## Décisions
-- [Journal des choix techniques et fonctionnels, avec la date]
+- 16/11/2026 — Hébergement Vercel + Neon ; PostgreSQL dès le départ (au lieu de SQLite) pour éviter une migration.
+- 16/11/2026 — Transaction : une seule date ; statut `PLANNED` (prévue) / `CLEARED` (pointée) → soldes Actuel et Prévisionnel.
+- 16/11/2026 — Comptes et pockets (façon Revolut : `Account.parentId`) ajoutables, modifiables, archivables ; un compte avec transactions s'archive au lieu d'être supprimé.
+- 16/11/2026 — Tickets restaurant : revenu sur le Compte Courant (catégorie dédiée).
+- 16/11/2026 — Achats multiples (boulangerie…) : une transaction par achat en base, regroupés à l'affichage par libellé normalisé + catégorie (vue Groupée / Détaillée) ; les formules Excel `=a+b+…` sont éclatées à l'import.
+- 16/11/2026 — Import Excel : fichiers 2024 à 2026 uniquement ; anciens comptes créés archivés ; fichiers réels jamais commités.
+- 16/11/2026 — Budgets, stats et graphique de budget : hors MVP (phase bonus).
+- 16/11/2026 — Récurrences gérées dans Paramètres › Récurrences ; générées en statut « prévue ».
+- 16/11/2026 — Authentification : mot de passe unique.

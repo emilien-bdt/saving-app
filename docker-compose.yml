@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: save
+      POSTGRES_PASSWORD: save
+      POSTGRES_DB: save
+    ports:
+      - "5432:5432"
+    volumes:
+      - save-db:/var/lib/postgresql/data
+
+volumes:
+  save-db:

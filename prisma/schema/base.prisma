@@ -1,0 +1,11 @@
+// Shared Prisma configuration. Each module adds its models in its own file
+// (e.g. finances.prisma) inside this folder.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
