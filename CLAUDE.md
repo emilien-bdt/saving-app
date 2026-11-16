@@ -1,5 +1,7 @@
 # Save – Application de gestion de vie perso
 
+> **État d'avancement : voir `ETAT.md`** (à mettre à jour à la fin de chaque étape).
+
 ## Vision
 Application web personnelle pour gérer plusieurs domaines de ma vie, en remplacement d'un fichier Excel peu pratique.
 Elle doit être **plus simple et plus rapide qu'Excel** : saisir une dépense doit prendre moins de 10 secondes, y compris sur téléphone.
@@ -20,7 +22,7 @@ Modules prévus (par ordre de priorité) :
 - Tailwind CSS 4 + shadcn/ui (composants dans `src/shared/ui`)
 - Base de données : PostgreSQL via Prisma 7 (adapter `pg`) ; Docker en local, Neon en production
 - Validation : Zod ; dates : date-fns (locale `fr`)
-- Graphiques : Recharts
+- Graphiques : SVG maison, sans dépendance (Recharts possible plus tard)
 - Tests : Vitest
 - Hébergement : Vercel + Neon
 
@@ -53,6 +55,7 @@ Modules prévus (par ordre de priorité) :
 - Après chaque étape : me dire comment tester (commande à lancer, page à ouvrir).
 - Si une demande est ambiguë, me poser la question plutôt que de deviner.
 - Tenir ce fichier à jour quand une décision importante est prise (section « Décisions » ci-dessous).
+- Mettre à jour `ETAT.md` à la fin de chaque étape (fonctionnalités, reste à faire, historique).
 
 ## Commandes
 - `npm run db:up` / `db:down` : démarrer / arrêter Postgres (Docker)
