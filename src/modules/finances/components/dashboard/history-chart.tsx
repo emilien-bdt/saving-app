@@ -49,9 +49,7 @@ export function HistoryChart({ history }: { history: MonthPoint[] }) {
         <polyline points={line} fill="none" strokeWidth="2.5" className="stroke-primary" strokeLinejoin="round" />
         {indexed.map(({ point, index }) => (
           <circle key={point.key} cx={x(index)} cy={yTotal(point.totalCents)} r="3.5" className="fill-primary">
-            <title>
-              {monthName(point.month)} {point.year} : {formatCents(point.totalCents)}
-            </title>
+            <title>{`${monthName(point.month)} ${point.year} : ${formatCents(point.totalCents)}`}</title>
           </circle>
         ))}
 
@@ -72,9 +70,9 @@ export function HistoryChart({ history }: { history: MonthPoint[] }) {
               rx="3"
               className={positive ? "fill-emerald-500" : "fill-red-500"}
             >
+              {/* <title> must have a single text child (React 19), hence one template string. */}
               <title>
-                {monthName(point.month)} {point.year} : {formatSignedCents(point.trendCents)} (apports {formatCents(point.incomeCents)},
-                dépenses {formatCents(point.expenseCents)})
+                {`${monthName(point.month)} ${point.year} : ${formatSignedCents(point.trendCents)} (apports ${formatCents(point.incomeCents)}, dépenses ${formatCents(point.expenseCents)})`}
               </title>
             </rect>
           );
