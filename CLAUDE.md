@@ -68,3 +68,6 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Budgets, stats et graphique de budget : hors MVP (phase bonus).
 - 16/11/2026 — Récurrences gérées dans Paramètres › Récurrences ; générées en statut « prévue ».
 - 16/11/2026 — Authentification : mot de passe unique.
+- 16/11/2026 — Opérations Excel sans jour (achats étalés sur le mois) : importées au dernier jour du mois avec `dayUnknown = true`, affichées « plusieurs jours » ; pas à corriger.
+- 16/11/2026 — Libellé = commerçant/source (obligatoire) ; détail facultatif dans `note` (ex. « Auchan - Herouville(Crêpes) » → label « Auchan - Herouville », note « Crêpes »).
+- 16/11/2026 — PWA iOS (manifest, standalone), pas de mode hors ligne. Récurrences générées à l'ouverture du mois, idempotentes (unique règle + date d'occurrence).
