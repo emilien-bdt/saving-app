@@ -92,4 +92,4 @@ Puis http://localhost:3000 (ou http://192.168.1.28:3000 depuis l'iPhone sur le m
 | 5 | `c51a5b4` | Journal des transactions, saisie rapide |
 | 6 | `2f18829` | Piloter (tableau de bord), navigation commune |
 | 7 | `4c3830f` | Comptes : blocs Courant / Épargne / Pockets, gestion dans Paramètres |
-| 8 | _(ce commit)_ | Intérêts journaliers des comptes d'épargne (taux historisés, calcul à la volée) |
+| 8 | `ff6ff6c` | Intérêts journaliers des comptes d'épargne (taux historisés, calcul à la volée) |
