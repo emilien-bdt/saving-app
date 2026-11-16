@@ -2,8 +2,10 @@ import { cookies } from "next/headers";
 import { requireSession } from "@/shared/auth/server";
 import { todayIso } from "@/shared/lib/today";
 import { getTransactionFormOptions } from "../data/form-options";
+import { getInterestTransactions } from "../data/interest";
 import { listMonthTransactions } from "../data/transactions";
-import { parseTransactionFilters, parseView, VIEW_COOKIE } from "../domain/list-filters";
+import { matchesListFilters, parseTransactionFilters, parseView, VIEW_COOKIE } from "../domain/list-filters";
+import { formatMonthParam } from "../domain/month-param";
 import { parseMonthParam } from "../domain/month-param";
 import { summarizeMonth } from "../domain/transaction-list";
 import { MonthNav } from "./month-nav";
@@ -23,7 +25,17 @@ export async function TransactionsPage({ searchParams }: Props) {
   const filters = parseTransactionFilters(params);
   const view = parseView(params.vue, (await cookies()).get(VIEW_COOKIE)?.value);
 
-  const [transactions, options] = await Promise.all([listMonthTransactions(month, filters), getTransactionFormOptions()]);
+  const [stored, options, interest] = await Promise.all([
+    listMonthTransactions(month, filters),
+    getTransactionFormOptions(),
+    getInterestTransactions(),
+  ]);
+  // Daily interest of the month (computed, read-only), one line per account.
+  const monthKey = formatMonthParam(month);
+  const transactions = [
+    ...stored,
+    ...interest.filter((item) => item.dateIso.startsWith(monthKey) && matchesListFilters(item, filters)),
+  ];
   const isCurrentMonth = month.year === currentMonth.year && month.month === currentMonth.month;
   const defaultDate = isCurrentMonth ? today : `${month.year}-${String(month.month).padStart(2, "0")}-01`;
   const plainParams = Object.fromEntries(

@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 16/11/2026, étape 7).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 16/11/2026, étape 8).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -11,7 +11,7 @@
 | Environnement | Local uniquement (`npm run dev`, Postgres Docker). **Pas encore déployé** sur Vercel + Neon |
 | Git | branche `main`, commits non poussés (`git push` à faire) |
 | Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
-| Tests | 178 tests de logique (Vitest), typecheck et lint au vert |
+| Tests | 192 tests de logique (Vitest), typecheck et lint au vert |
 
 ## Ce qui fonctionne
 
@@ -27,6 +27,7 @@
 ### Piloter — `/finances` (lecture seule)
 - Navigation par mois (`?mois=AAAA-MM`).
 - Indicateurs : Total, Épargne (hors pockets), Pockets, Tendance (réel et prévu, écart vs mois précédent).
+- Intérêts journaliers inclus dans les soldes, la Tendance et les Apports.
 - « Où part l'argent » : barres par catégorie, part du mois, écart à la moyenne 6 mois ; clic → Journal filtré.
 - Comptes en trois blocs **Courant / Épargne / Pockets**, chacun avec son total (début du mois, évolution, solde actuel, prévu) et le détail par compte.
 - Évolution 12 mois (solde total + tendance mensuelle), en SVG.
@@ -43,9 +44,11 @@
 - Liste du mois, vues **Détaillée** (par jour) et **Groupée** (par libellé), choix mémorisé.
 - Filtres : recherche, compte, catégorie, statut.
 - Pointage en un geste ; modification et suppression d'une transaction.
+- Ligne calculée **Intérêts** par compte d'épargne (gagnés jusqu'à hier + à venir d'ici la fin du mois), non modifiable.
 
 ### Paramètres — `/finances/parametres`
 - **Comptes** : ajouter un compte (courant, épargne) ou un pocket, renommer, couleur, icône, archiver / désarchiver, supprimer s'il n'a jamais servi, ordre ↑↓. Un nouveau compte démarre à 0 €.
+- **Intérêts journaliers** (comptes d'épargne) : historique des taux « à partir du », ajout ou suppression même dans le passé ; taux en cours affiché dans la liste.
 - Catégories (**lecture seule** pour l'instant), déconnexion.
 
 ### Import Excel
@@ -54,13 +57,12 @@
 
 ## Ce qui reste à faire (dans l'ordre)
 
-1. **Intérêts journaliers** (étape 8, plan validé) : taux historisés par compte d'épargne dans Paramètres › Comptes, intérêts calculés à la volée (arrondi au centime par jour), ligne « Intérêts » mensuelle.
-2. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
-3. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
-4. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
-5. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
-6. **Déploiement** Vercel + Neon, import des données en production.
-7. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), module **Repas**.
+1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
+2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
+3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
+4. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
+5. **Déploiement** Vercel + Neon, import des données en production.
+6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), module **Repas**.
 
 ## Limites connues
 
@@ -68,7 +70,8 @@
 - Les montants négatifs ne sont pas saisissables (un remboursement = un revenu).
 - Les catégories ne se modifient pas encore depuis l'app (seulement via `npm run db:studio`).
 - Le solde initial d'un compte ne se modifie pas (choix) : on corrige par une opération ou un virement.
-- Environnement de Claude : pas d'installation de paquets ni de Vitest natif (tests lancés avec Node) ; l'app réelle se teste sur le Mac.
+- Intérêts : base 365 jours (années bissextiles comprises), avant impôts ; un écart de quelques centimes avec Revolut reste possible.
+- Environnement de Claude : pas d'installation de paquets, ni de Vitest natif (tests lancés avec Node), ni de `prisma generate` ; l'app réelle se teste sur le Mac.
 
 ## Démarrer en local
 
@@ -89,3 +92,4 @@ Puis http://localhost:3000 (ou http://192.168.1.28:3000 depuis l'iPhone sur le m
 | 5 | `c51a5b4` | Journal des transactions, saisie rapide |
 | 6 | `2f18829` | Piloter (tableau de bord), navigation commune |
 | 7 | `4c3830f` | Comptes : blocs Courant / Épargne / Pockets, gestion dans Paramètres |
+| 8 | _(ce commit)_ | Intérêts journaliers des comptes d'épargne (taux historisés, calcul à la volée) |

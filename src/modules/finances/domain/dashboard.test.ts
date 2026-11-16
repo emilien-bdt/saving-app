@@ -117,3 +117,21 @@ describe("buildDashboard (March 2026)", () => {
     expect(dashboard.history.at(-3)).toMatchObject({ key: "2026-01", hasData: false });
   });
 });
+
+describe("buildDashboard with computed interest", () => {
+  const interest: DashboardTransaction[] = [
+    { ...tx("2026-03-31", { type: "INCOME", categoryId: null, label: "Intérêts", labelKey: "interets", amountCents: 120 }), computed: true },
+    {
+      ...tx("2026-03-31", { type: "INCOME", categoryId: null, label: "Intérêts", labelKey: "interets", amountCents: 80, status: "PLANNED" }),
+      computed: true,
+    },
+  ];
+  const dashboard = buildDashboard({ month: { year: 2026, month: 3 }, accounts, categories, transactions: [...transactions, ...interest] });
+
+  it("counts interest in balances and trend, never as « à pointer »", () => {
+    expect(dashboard.total).toEqual({ clearedCents: 229_900 + 120, projectedCents: 228_400 + 200 });
+    expect(dashboard.trend.projectedCents).toBe(72_400 + 200);
+    expect(dashboard.planned.count).toBe(1);
+    expect(dashboard.incomes.find((line) => line.label === "Intérêts")?.cents).toBe(200);
+  });
+});

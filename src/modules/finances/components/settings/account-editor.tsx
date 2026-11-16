@@ -9,6 +9,7 @@ import { ACCOUNT_ICON_NAMES, PRESET_COLORS } from "../../domain/icons";
 import type { AccountKind } from "../../schemas/account";
 import type { AccountSettingsItem } from "../../view-models";
 import { CategoryIcon } from "../category-icon";
+import { InterestRatesEditor } from "./interest-rates-editor";
 
 const KINDS: { kind: AccountKind; label: string }[] = [
   { kind: "CHECKING", label: "Courant" },
@@ -195,7 +196,10 @@ export function AccountEditor({ account, initial, accounts, onClose }: Props) {
             </fieldset>
 
             {isNew ? (
-              <p className="text-sm text-muted-foreground">Le compte démarre à 0 € : alimente-le par un virement ou une opération.</p>
+              <p className="text-sm text-muted-foreground">
+                Le compte démarre à 0 € : alimente-le par un virement ou une opération.
+                {kind === "SAVINGS" ? " Les intérêts journaliers se règlent une fois le compte ajouté." : ""}
+              </p>
             ) : null}
 
             {formError ? (
@@ -240,6 +244,12 @@ export function AccountEditor({ account, initial, accounts, onClose }: Props) {
               </Button>
             </div>
           </form>
+
+          {account && account.group === "SAVINGS" ? (
+            <div className="mt-4">
+              <InterestRatesEditor account={account} />
+            </div>
+          ) : null}
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>

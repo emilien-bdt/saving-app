@@ -18,6 +18,8 @@ export type DashboardTransaction = {
   categoryId: string | null;
   label: string;
   labelKey: string;
+  /** Computed by the app (daily interest): counted everywhere, never "à pointer". */
+  computed?: boolean;
 };
 
 export type DashboardAccountInput = BalanceAccount & {
@@ -292,7 +294,7 @@ export function buildDashboard(input: {
     } else transfers.set(transferKey, { fromId: transaction.accountId, toId: transaction.toAccountId, count: 1, cents: transaction.amountCents });
   }
 
-  const planned = current.filter((transaction) => transaction.status === "PLANNED");
+  const planned = current.filter((transaction) => transaction.status === "PLANNED" && !transaction.computed);
   const inGroup = (group: AccountGroup) => (account: DashboardAccountInput) => accountGroupOf(account) === group;
   const savingsFilter = inGroup("SAVINGS");
   const groups: AccountGroupLine[] = ACCOUNT_GROUPS.map((group) => ({

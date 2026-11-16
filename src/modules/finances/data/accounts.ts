@@ -1,8 +1,10 @@
 import { db } from "@/shared/lib/db";
 import { todayIso } from "@/shared/lib/today";
 import { type AccountState, accountGroupOf, canDeleteAccount, nextSortOrder } from "../domain/accounts";
+import { rateOn } from "../domain/interest";
 import type { AccountData } from "../schemas/account";
 import type { AccountSettingsItem } from "../view-models";
+import { getInterestRates } from "./interest";
 
 /** Every account with what the rules need (usage counts). */
 export async function getAccountStates(): Promise<(AccountState & { color: string; icon: string | null })[]> {
@@ -30,7 +32,8 @@ export async function getAccountStates(): Promise<(AccountState & { color: strin
 }
 
 export async function getAccountsForSettings(): Promise<AccountSettingsItem[]> {
-  const accounts = await getAccountStates();
+  const [accounts, rates] = await Promise.all([getAccountStates(), getInterestRates()]);
+  const today = todayIso();
   const names = new Map(accounts.map((account) => [account.id, account.name]));
   return accounts.map((account) => ({
     id: account.id,
@@ -44,6 +47,8 @@ export async function getAccountsForSettings(): Promise<AccountSettingsItem[]> {
     group: accountGroupOf(account),
     usageCount: account.usageCount,
     canDelete: canDeleteAccount(account.id, accounts),
+    interestRates: rates.get(account.id) ?? [],
+    currentRateBp: rateOn(today, rates.get(account.id) ?? []),
   }));
 }
 

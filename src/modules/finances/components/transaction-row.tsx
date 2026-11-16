@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Percent, PiggyBank } from "lucide-react";
 import type { AccountOption, CategoryOption, TransactionItem } from "../view-models";
 import { CategoryIcon } from "./category-icon";
 import { formatTransactionAmount } from "./format";
@@ -16,7 +16,38 @@ type Props = {
   onOpen: () => void;
 };
 
-export function TransactionRow({ transaction, account, toAccount, category, showAccount, onOpen }: Props) {
+export function TransactionRow(props: Props) {
+  if (props.transaction.computed) return <ComputedRow transaction={props.transaction} account={props.account} />;
+  return <StoredRow {...props} />;
+}
+
+/** Daily interest computed by the app: read-only (rates are set in Paramètres › Comptes). */
+function ComputedRow({ transaction, account }: Pick<Props, "transaction" | "account">) {
+  const planned = transaction.status === "PLANNED";
+  return (
+    <li className="flex items-center gap-1">
+      <span className="inline-flex size-9 shrink-0 items-center justify-center text-muted-foreground" title="Calculé automatiquement">
+        <Percent className="size-4" aria-hidden />
+      </span>
+      <div className="flex min-w-0 flex-1 items-center gap-3 py-2 pr-2">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+          <PiggyBank className="size-4" aria-hidden />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-medium">{transaction.label}</span>
+          <span className="block truncate text-sm text-muted-foreground">
+            {[planned ? "à venir d'ici la fin du mois" : "calculés chaque jour", account?.displayName].filter(Boolean).join(" · ")}
+          </span>
+        </span>
+        <span className={`shrink-0 font-medium text-emerald-600 tabular-nums ${planned ? "opacity-60" : ""}`}>
+          {formatTransactionAmount(transaction.amountCents, transaction.type)}
+        </span>
+      </div>
+    </li>
+  );
+}
+
+function StoredRow({ transaction, account, toAccount, category, showAccount, onOpen }: Props) {
   const isTransfer = transaction.type === "TRANSFER";
   const details = [
     transaction.note,

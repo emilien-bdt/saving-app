@@ -9,6 +9,8 @@ export type TransactionItem = ListTransaction & {
   note: string | null;
   accountId: string;
   toAccountId: string | null;
+  /** Computed by the app (daily interest): read-only, not stored. */
+  computed?: boolean;
 };
 
 export type AccountOption = {
@@ -54,4 +56,8 @@ export type AccountSettingsItem = {
   /** Transactions and recurring rules using the account. */
   usageCount: number;
   canDelete: boolean;
+  /** Daily interest rates (savings accounts), oldest first. */
+  interestRates: { id: string; validFromIso: string; rateBp: number }[];
+  /** Rate applying today (0 without rate). */
+  currentRateBp: number;
 };

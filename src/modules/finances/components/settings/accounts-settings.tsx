@@ -8,9 +8,11 @@ import { ACCOUNT_GROUP_LABELS, ACCOUNT_GROUPS } from "../../domain/accounts";
 import type { AccountKind } from "../../schemas/account";
 import type { AccountSettingsItem } from "../../view-models";
 import { CategoryIcon } from "../category-icon";
+import { formatRateBp } from "../format";
 import { AccountEditor } from "./account-editor";
 
-type EditorState = { account: AccountSettingsItem | null; initial?: { kind: AccountKind; parentId: string | null }; key: number };
+/** The account is looked up by id at each render, so the dialog shows fresh data (e.g. a rate just added). */
+type EditorState = { accountId: string | null; initial?: { kind: AccountKind; parentId: string | null }; key: number };
 
 function AccountBadge({ account }: { account: AccountSettingsItem }) {
   return (
@@ -29,7 +31,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const open = (account: AccountSettingsItem | null, initial?: EditorState["initial"]) =>
-    setEditor((current) => ({ account, initial, key: (current?.key ?? 0) + 1 }));
+    setEditor((current) => ({ accountId: account?.id ?? null, initial, key: (current?.key ?? 0) + 1 }));
 
   const move = (id: string, direction: -1 | 1) =>
     startTransition(async () => {
@@ -52,6 +54,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
             <span className="truncate text-sm text-muted-foreground">· {account.parentName}</span>
           ) : null}
           {account.archived ? <span className="text-sm text-muted-foreground">· {ACCOUNT_GROUP_LABELS[account.group].toLowerCase()}</span> : null}
+          {account.currentRateBp > 0 ? <span className="shrink-0 text-sm text-emerald-700">· {formatRateBp(account.currentRateBp)}</span> : null}
         </button>
         {siblings && siblings.length > 1 ? (
           <span className="flex">
@@ -143,7 +146,13 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
       </div>
 
       {editor ? (
-        <AccountEditor key={editor.key} account={editor.account} initial={editor.initial} accounts={accounts} onClose={() => setEditor(null)} />
+        <AccountEditor
+          key={editor.key}
+          account={editor.accountId ? (accounts.find((account) => account.id === editor.accountId) ?? null) : null}
+          initial={editor.initial}
+          accounts={accounts}
+          onClose={() => setEditor(null)}
+        />
       ) : null}
     </section>
   );

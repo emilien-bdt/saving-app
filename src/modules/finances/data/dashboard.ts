@@ -1,6 +1,7 @@
 import { db } from "@/shared/lib/db";
 import { buildDashboard, type Dashboard } from "../domain/dashboard";
 import type { YearMonth } from "../domain/period";
+import { getInterestTransactions } from "./interest";
 
 export type DashboardData = {
   dashboard: Dashboard;
@@ -9,7 +10,7 @@ export type DashboardData = {
 
 /** Loads the whole history (a few thousand rows at most) and computes the month's dashboard. */
 export async function getDashboard(month: YearMonth): Promise<DashboardData> {
-  const [accounts, categories, transactions] = await Promise.all([
+  const [accounts, categories, transactions, interest] = await Promise.all([
     db.account.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.category.findMany({ select: { id: true, name: true, kind: true, color: true, icon: true, parentId: true } }),
     db.transaction.findMany({
@@ -27,6 +28,7 @@ export async function getDashboard(month: YearMonth): Promise<DashboardData> {
         labelKey: true,
       },
     }),
+    getInterestTransactions(),
   ]);
 
   const dashboard = buildDashboard({
@@ -41,7 +43,10 @@ export async function getDashboard(month: YearMonth): Promise<DashboardData> {
       openedOnIso: account.initialBalanceDate.toISOString().slice(0, 10),
     })),
     categories,
-    transactions: transactions.map(({ date, ...transaction }) => ({ ...transaction, dateIso: date.toISOString().slice(0, 10) })),
+    transactions: [
+      ...transactions.map(({ date, ...transaction }) => ({ ...transaction, dateIso: date.toISOString().slice(0, 10) })),
+      ...interest,
+    ],
   });
   return { dashboard, accountNames: Object.fromEntries(accounts.map((account) => [account.id, account.name])) };
 }

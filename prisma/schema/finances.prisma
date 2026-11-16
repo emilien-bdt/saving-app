@@ -50,6 +50,7 @@ model Account {
   incomingTransfers      Transaction[]   @relation("TransactionToAccount")
   recurringRules         RecurringRule[] @relation("RecurringRuleAccount")
   incomingRecurringRules RecurringRule[] @relation("RecurringRuleToAccount")
+  interestRates          InterestRate[]
 
   @@index([parentId])
   @@map("finances_account")
@@ -145,6 +146,22 @@ model RecurringRule {
   transactions Transaction[]
 
   @@map("finances_recurring_rule")
+}
+
+/// Daily interest (Revolut-like savings): annual rate valid from a date until the next one.
+/// Interest is never stored: it is computed on the fly from the balances (domain/interest.ts).
+model InterestRate {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  validFrom DateTime @db.Date
+  /// Annual rate in basis points (2,25 % = 225); 0 stops the interest.
+  rateBp    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([accountId, validFrom])
+  @@map("finances_interest_rate")
 }
 
 model ImportBatch {

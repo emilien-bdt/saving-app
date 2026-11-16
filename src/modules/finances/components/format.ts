@@ -27,3 +27,14 @@ export function formatTransactionAmount(cents: number, type: TransactionType): s
 export function formatSignedCents(cents: number): string {
   return cents > 0 ? `+${formatCents(cents)}` : cents < 0 ? `−${formatCents(-cents)}` : formatCents(0);
 }
+
+/** 225 → "2,25 %" (no Intl: identical on the server and in the browser). */
+export function formatRateBp(rateBp: number): string {
+  return `${Math.floor(rateBp / 100)},${String(rateBp % 100).padStart(2, "0")} %`;
+}
+
+/** "2026-11-01" → "01/11/2026". */
+export function formatDateFr(dateIso: string): string {
+  const [year, month, day] = dateIso.split("-");
+  return `${day}/${month}/${year}`;
+}

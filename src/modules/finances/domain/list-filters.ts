@@ -1,3 +1,4 @@
+import { normalizeLabel } from "./labels";
 import { TRANSACTION_STATUSES, type TransactionStatus } from "./types";
 
 export type TransactionFilters = {
@@ -44,3 +45,18 @@ export const VIEW_COOKIE = "finances_vue";
 
 export const isTransactionStatus = (value: string): value is TransactionStatus =>
   (TRANSACTION_STATUSES as readonly string[]).includes(value);
+
+/** Same filters as the database query, for rows computed by the app (interest). */
+export function matchesListFilters(
+  item: { accountId: string; toAccountId: string | null; categoryId: string | null; status: TransactionStatus; label: string; note: string | null },
+  filters: TransactionFilters,
+): boolean {
+  if (filters.accountId && item.accountId !== filters.accountId && item.toAccountId !== filters.accountId) return false;
+  if (filters.categoryId && item.categoryId !== filters.categoryId) return false;
+  if (filters.status && item.status !== filters.status) return false;
+  if (filters.query) {
+    const query = normalizeLabel(filters.query);
+    if (![item.label, item.note ?? ""].some((text) => normalizeLabel(text).includes(query))) return false;
+  }
+  return true;
+}
