@@ -69,7 +69,7 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Tickets restaurant : revenu sur le Compte Courant (catégorie dédiée).
 - 16/11/2026 — Achats multiples (boulangerie…) : une transaction par achat en base, regroupés à l'affichage par libellé normalisé + catégorie (vue Groupée / Détaillée) ; les formules Excel `=a+b+…` sont éclatées à l'import.
 - 16/11/2026 — Import Excel : fichiers 2024 à 2026 uniquement ; anciens comptes créés archivés ; fichiers réels jamais commités.
-- 16/11/2026 — Budgets, stats et graphique de budget : hors MVP (phase bonus).
+- 16/11/2026 — Budgets, stats et graphique de budget : hors MVP (phase bonus). → Révisé le 16/11/2026 : budgets intégrés au MVP (voir plus bas).
 - 16/11/2026 — Récurrences gérées dans Paramètres › Récurrences ; générées en statut « prévue ».
 - 16/11/2026 — Authentification : mot de passe unique.
 - 16/11/2026 — Opérations Excel sans jour (achats étalés sur le mois) : importées au dernier jour du mois avec `dayUnknown = true`, affichées « plusieurs jours » ; pas à corriger.
@@ -80,3 +80,5 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Suppression d'un `ImportBatch` = annulation de l'import (cascade) ; `importRef` unique rend la ré-importation idempotente.
 - 16/11/2026 — Import Excel : lecteur .xlsx maison (zip + XML, sans dépendance) ; plages de lignes lues dans les formules SUMIF des en-têtes ; 3 mises en page (Livrets jusqu'à 03/2026, transition 04/2026, Pockets Revolut dès 05/2026) ; comptes importés : Compte Courant, Livret A et Livret Jeune (archivés), Matelas de sécurité, pockets Appartement et Voiture ; virements datés fin de mois (`dayUnknown`) ; formules `=a-b` (remboursements) gardées en une transaction nette ; contrôle : soldes « Actuel » recalculés = cellules Excel (95/95 au 16/11/2026).
 - 16/11/2026 — Transactions : page `/finances/transactions?mois=AAAA-MM` (filtres `compte`, `categorie`, `statut=prevue|pointee`, `q`) ; vue Détaillée par défaut, choix mémorisé (cookie `finances_vue`) ; nouvelle saisie = dépense pointée du jour sur le Compte Courant ; un libellé connu pré-remplit sa catégorie habituelle ; « aujourd'hui » = fuseau Europe/Paris (`shared/lib/today.ts`).
+- 16/11/2026 — Changement de cap : séparer **Piloter** (tableau de bord mensuel visuel, page d'accueil de Finances, lecture seule pour l'instant), **Saisir** (formulaire rapide, accessible partout via « + ») et **Journal** (liste filtrable actuelle). Même navigation et même usage sur iPhone et ordinateur (mise en page responsive, pas d'écran spécifique au mobile).
+- 16/11/2026 — Budgets mensuels intégrés au MVP : un montant par catégorie, valable à partir d'un mois (historique conservé), affichés dans le tableau de bord (consommé / reste / projection fin de mois).
