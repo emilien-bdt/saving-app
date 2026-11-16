@@ -88,4 +88,4 @@ Puis http://localhost:3000 (ou http://192.168.1.28:3000 depuis l'iPhone sur le m
 | 4 | `ae7c4b3` | Import des fichiers Excel 2024-2026 |
 | 5 | `c51a5b4` | Journal des transactions, saisie rapide |
 | 6 | `2f18829` | Piloter (tableau de bord), navigation commune |
-| 7 | _(ce commit)_ | Comptes : blocs Courant / Épargne / Pockets, gestion dans Paramètres |
+| 7 | `4c3830f` | Comptes : blocs Courant / Épargne / Pockets, gestion dans Paramètres |
