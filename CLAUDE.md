@@ -59,7 +59,7 @@ Modules prévus (par ordre de priorité) :
 - `npm run dev` : serveur de développement (http://localhost:3000)
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
-- `npm run auth:hash` : génère `AUTH_PASSWORD_HASH` + `AUTH_SECRET` (à coller dans `.env` et dans Vercel)
+- `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour Vercel
 
 ## Décisions
 - 16/11/2026 — Hébergement Vercel + Neon ; PostgreSQL dès le départ (au lieu de SQLite) pour éviter une migration.

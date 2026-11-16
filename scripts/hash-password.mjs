@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Generates AUTH_PASSWORD_HASH (+ a fresh AUTH_SECRET) for .env / Vercel.
+// Generates AUTH_PASSWORD_HASH (+ a fresh AUTH_SECRET), writes them into .env
+// (when it exists) and prints them for Vercel.
 // Usage: npm run auth:hash            (prompts, input hidden)
 //        echo -n "pw" | npm run auth:hash
 // Same format as src/shared/auth/password.ts (checked by password.test.ts).
 import { randomBytes, scrypt } from "node:crypto";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const PARAMS = { N: 2 ** 14, r: 8, p: 1 };
@@ -61,8 +63,34 @@ async function main() {
     console.error("Mot de passe trop court (12 caractères minimum).");
     process.exit(1);
   }
-  console.log(`AUTH_PASSWORD_HASH="${await hashPassword(password)}"`);
-  console.log(`AUTH_SECRET="${randomBytes(32).toString("base64url")}"`);
+  const values = {
+    AUTH_SECRET: randomBytes(32).toString("base64url"),
+    AUTH_PASSWORD_HASH: await hashPassword(password),
+  };
+  const lines = Object.entries(values).map(([key, value]) => `${key}="${value}"`);
+
+  if (existsSync(".env")) {
+    writeFileSync(".env", upsertEnv(readFileSync(".env", "utf8"), values));
+    console.log(".env mis à jour (redémarre `npm run dev`).");
+  }
+  console.log("\nPour Vercel (Settings › Environment Variables) :");
+  console.log(lines.join("\n"));
+}
+
+/**
+ * Replaces (or appends) KEY="value" lines in a .env file content.
+ * @param {string} content
+ * @param {Record<string, string>} values
+ * @returns {string}
+ */
+export function upsertEnv(content, values) {
+  let result = content;
+  for (const [key, value] of Object.entries(values)) {
+    const line = `${key}="${value}"`;
+    const pattern = new RegExp(`^${key}=.*$`, "m");
+    result = pattern.test(result) ? result.replace(pattern, () => line) : `${result.replace(/\n?$/, "\n")}${line}\n`;
+  }
+  return result;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
