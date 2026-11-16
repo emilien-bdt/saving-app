@@ -1,11 +1,13 @@
 import { LogoutButton } from "@/shared/auth/components/logout-button";
 import { requireSession } from "@/shared/auth/server";
+import { getAccountsForSettings } from "../data/accounts";
 import { getTransactionFormOptions } from "../data/form-options";
 import { CategoryIcon } from "./category-icon";
+import { AccountsSettings } from "./settings/accounts-settings";
 
 export async function SettingsPage() {
   await requireSession();
-  const { accounts, categories } = await getTransactionFormOptions();
+  const [{ categories }, accounts] = await Promise.all([getTransactionFormOptions(), getAccountsForSettings()]);
   const topCategories = categories.filter((category) => !category.parentId);
 
   return (
@@ -15,23 +17,10 @@ export async function SettingsPage() {
         <LogoutButton />
       </div>
       <p className="text-sm text-muted-foreground">
-        La modification des comptes, catégories, budgets et récurrences arrive dans les prochaines étapes.
+        La modification des catégories, budgets et récurrences arrive dans les prochaines étapes.
       </p>
 
-      <section className="rounded-xl border p-4">
-        <h2 className="mb-2 font-semibold">Comptes</h2>
-        <ul className="divide-y">
-          {accounts.map((account) => (
-            <li key={account.id} className={`flex justify-between py-2 ${account.parentId ? "pl-6" : ""}`}>
-              <span>{account.parentId ? account.name : account.displayName}</span>
-              <span className="text-sm text-muted-foreground">
-                {account.parentId ? "pocket" : account.type === "CHECKING" ? "courant" : "épargne"}
-                {account.archived ? " · archivé" : ""}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <AccountsSettings accounts={accounts} />
 
       <section className="rounded-xl border p-4">
         <h2 className="mb-2 font-semibold">Catégories</h2>

@@ -1,4 +1,5 @@
 import type { Cents } from "@/shared/lib/money";
+import { ACCOUNT_GROUPS, type AccountGroup, accountGroupOf } from "./accounts";
 import { type Balance, type BalanceAccount, computeOwnBalances, withPockets } from "./balances";
 import { addMonths, type YearMonth } from "./period";
 import { summarizeMonth } from "./transaction-list";
@@ -19,7 +20,12 @@ export type DashboardTransaction = {
   labelKey: string;
 };
 
-export type DashboardAccountInput = BalanceAccount & { name: string; archived: boolean };
+export type DashboardAccountInput = BalanceAccount & {
+  name: string;
+  archived: boolean;
+  /** "AAAA-MM-JJ": initial balance date (creation date for accounts made in the app). */
+  openedOnIso: string;
+};
 
 export type DashboardCategoryInput = {
   id: string;
@@ -35,12 +41,22 @@ export type AccountLine = {
   name: string;
   type: AccountType;
   parentId: string | null;
+  parentName: string | null;
+  group: AccountGroup;
   /** Excel "Début": cleared balance at the end of the previous month. */
   startCents: Cents;
   /** Own balance ("Actuel" = cleared, "Prévisionnel" = start + every transaction of the month). */
   balance: Balance;
   /** Balance including the pockets (top-level accounts). */
   totalBalance: Balance;
+};
+
+/** Courant / Épargne / Pockets: each block has its own total (own balances, pockets not added to their parent). */
+export type AccountGroupLine = {
+  group: AccountGroup;
+  startCents: Cents;
+  balance: Balance;
+  accounts: AccountLine[];
 };
 
 export type LabelTotal = { label: string; count: number; cents: Cents };
@@ -77,12 +93,15 @@ export type MonthPoint = {
 export type Dashboard = {
   month: YearMonth;
   total: Balance;
+  /** Top-level savings accounts (pockets excluded). */
   savings: Balance;
+  pockets: Balance;
   income: Balance;
   expense: Balance;
   trend: Balance;
-  previous: { totalCents: Cents; savingsCents: Cents; trendCents: Cents; expenseCents: Cents };
+  previous: { totalCents: Cents; savingsCents: Cents; pocketsCents: Cents; trendCents: Cents; expenseCents: Cents };
   accounts: AccountLine[];
+  groups: AccountGroupLine[];
   expenses: CategoryLine[];
   incomes: LabelTotal[];
   transfers: { fromId: string; toId: string; count: number; cents: Cents }[];
@@ -182,19 +201,23 @@ export function buildDashboard(input: {
       .flatMap((transaction) => [transaction.accountId, transaction.toAccountId ?? ""]),
   );
   const usedSoFar = new Set(transactions.flatMap((transaction) => [transaction.accountId, transaction.toAccountId ?? ""]));
+  const accountById = new Map(accounts.map((account) => [account.id, account]));
   const accountLines: AccountLine[] = accounts
     .filter((account) => {
       const balance = own.get(account.id) ?? { clearedCents: 0, projectedCents: 0 };
       const empty = balance.clearedCents === 0 && balance.projectedCents === 0 && !movedThisMonth.has(account.id);
       if (!empty) return true;
-      // Empty: hide closed accounts and accounts that only start being used after this month.
-      return !account.archived && !(usedLater.has(account.id) && !usedSoFar.has(account.id));
+      // Empty: hide closed accounts and accounts that only start being used (or exist) after this month.
+      if (account.archived || account.openedOnIso.slice(0, 7) > key) return false;
+      return !(usedLater.has(account.id) && !usedSoFar.has(account.id));
     })
     .map((account) => ({
       id: account.id,
       name: account.name,
       type: account.type,
       parentId: account.parentId,
+      parentName: account.parentId ? (accountById.get(account.parentId)?.name ?? null) : null,
+      group: accountGroupOf(account),
       startCents: start.get(account.id)?.clearedCents ?? 0,
       balance: own.get(account.id) ?? { clearedCents: 0, projectedCents: 0 },
       totalBalance: totals.get(account.id) ?? { clearedCents: 0, projectedCents: 0 },
@@ -270,7 +293,14 @@ export function buildDashboard(input: {
   }
 
   const planned = current.filter((transaction) => transaction.status === "PLANNED");
-  const savingsFilter = (account: DashboardAccountInput) => account.type === "SAVINGS";
+  const inGroup = (group: AccountGroup) => (account: DashboardAccountInput) => accountGroupOf(account) === group;
+  const savingsFilter = inGroup("SAVINGS");
+  const groups: AccountGroupLine[] = ACCOUNT_GROUPS.map((group) => ({
+    group,
+    startCents: sumBalances(accounts, start, inGroup(group)).clearedCents,
+    balance: sumBalances(accounts, own, inGroup(group)),
+    accounts: accountLines.filter((line) => line.group === group),
+  })).filter((line) => line.accounts.length > 0);
 
   const history: MonthPoint[] = Array.from({ length: HISTORY_MONTHS }, (_, index) => {
     const ym = addMonths(month, index - (HISTORY_MONTHS - 1));
@@ -293,16 +323,19 @@ export function buildDashboard(input: {
     month,
     total: sumBalances(accounts, own),
     savings: sumBalances(accounts, own, savingsFilter),
+    pockets: sumBalances(accounts, own, inGroup("POCKETS")),
     income: summary.income,
     expense: summary.expense,
     trend: summary.trend,
     previous: {
       totalCents: sumBalances(accounts, start).clearedCents,
       savingsCents: sumBalances(accounts, start, savingsFilter).clearedCents,
+      pocketsCents: sumBalances(accounts, start, inGroup("POCKETS")).clearedCents,
       trendCents: previousSummary.trend.projectedCents,
       expenseCents: previousSummary.expense.projectedCents,
     },
     accounts: accountLines,
+    groups,
     expenses: expenseLines,
     incomes: topLabels(current.filter((transaction) => transaction.type === "INCOME"), 5),
     transfers: [...transfers.values()].sort((a, b) => b.cents - a.cents),

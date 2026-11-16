@@ -1,12 +1,17 @@
 import {
+  Briefcase,
   Car,
   Circle,
+  CreditCard,
+  Gift,
+  GraduationCap,
   HandCoins,
   House,
   Landmark,
   type LucideIcon,
   PartyPopper,
   PiggyBank,
+  Plane,
   Repeat,
   Shapes,
   Shield,
@@ -14,15 +19,21 @@ import {
   Utensils,
   Wallet,
 } from "lucide-react";
+import type { IconName } from "../domain/icons";
 
 /** Icons available for accounts and categories (names stored in the database). */
-const ICONS: Record<string, LucideIcon> = {
+const ICONS: Record<IconName, LucideIcon> = {
+  briefcase: Briefcase,
   car: Car,
+  "credit-card": CreditCard,
+  gift: Gift,
+  "graduation-cap": GraduationCap,
   "hand-coins": HandCoins,
   house: House,
   landmark: Landmark,
   "party-popper": PartyPopper,
   "piggy-bank": PiggyBank,
+  plane: Plane,
   repeat: Repeat,
   shapes: Shapes,
   shield: Shield,
@@ -32,6 +43,6 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 export function CategoryIcon({ icon, className }: { icon: string | null; className?: string }) {
-  const Icon = (icon ? ICONS[icon] : undefined) ?? Circle;
+  const Icon = (icon && icon in ICONS ? ICONS[icon as IconName] : undefined) ?? Circle;
   return <Icon className={className} aria-hidden />;
 }

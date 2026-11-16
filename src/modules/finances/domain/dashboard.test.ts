@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { buildDashboard, type DashboardAccountInput, type DashboardCategoryInput, type DashboardTransaction } from "./dashboard";
 
 const accounts: DashboardAccountInput[] = [
-  { id: "cc", name: "Compte Courant", type: "CHECKING", parentId: null, initialBalanceCents: 10_000, archived: false },
-  { id: "la", name: "Livret A", type: "SAVINGS", parentId: null, initialBalanceCents: 50_000, archived: true },
-  { id: "voiture", name: "Voiture", type: "SAVINGS", parentId: "cc", initialBalanceCents: 0, archived: false },
-  { id: "futur", name: "Futur", type: "SAVINGS", parentId: null, initialBalanceCents: 0, archived: false },
+  { id: "cc", name: "Compte Courant", type: "CHECKING", parentId: null, initialBalanceCents: 10_000, archived: false, openedOnIso: "2026-01-01" },
+  { id: "la", name: "Livret A", type: "SAVINGS", parentId: null, initialBalanceCents: 50_000, archived: true, openedOnIso: "2026-01-01" },
+  { id: "voiture", name: "Voiture", type: "SAVINGS", parentId: "cc", initialBalanceCents: 0, archived: false, openedOnIso: "2026-01-01" },
+  { id: "futur", name: "Futur", type: "SAVINGS", parentId: null, initialBalanceCents: 0, archived: false, openedOnIso: "2026-01-01" },
 ];
 const categories: DashboardCategoryInput[] = [
   { id: "apports", name: "Apports", kind: "INCOME", color: "#0f0", icon: null, parentId: null },
@@ -56,18 +56,35 @@ describe("buildDashboard (March 2026)", () => {
     expect(cc).toMatchObject({ startCents: 156_000, balance: { clearedCents: 219_900, projectedCents: 218_400 } });
     expect(cc?.totalBalance).toEqual({ clearedCents: 229_900, projectedCents: 228_400 });
     expect(dashboard.total).toEqual({ clearedCents: 229_900, projectedCents: 228_400 });
-    expect(dashboard.savings).toEqual({ clearedCents: 10_000, projectedCents: 10_000 });
+    // Pockets are totalled apart from savings.
+    expect(dashboard.savings).toEqual({ clearedCents: 0, projectedCents: 0 });
+    expect(dashboard.pockets).toEqual({ clearedCents: 10_000, projectedCents: 10_000 });
   });
 
   it("hides empty closed accounts and accounts opened later", () => {
     expect(dashboard.accounts.map((account) => account.id)).toEqual(["cc", "voiture"]);
+    const created = { id: "neuf", name: "Neuf", type: "SAVINGS" as const, parentId: null, initialBalanceCents: 0, archived: false };
+    const withNew = (openedOnIso: string) =>
+      buildDashboard({ month: { year: 2026, month: 3 }, accounts: [...accounts, { ...created, openedOnIso }], categories, transactions });
+    expect(withNew("2026-04-10").accounts.map((account) => account.id)).not.toContain("neuf");
+    expect(withNew("2026-03-10").accounts.map((account) => account.id)).toContain("neuf");
+  });
+
+  it("splits accounts into Courant / Épargne / Pockets blocks with their own totals", () => {
+    expect(
+      dashboard.groups.map((line) => [line.group, line.startCents, line.balance.clearedCents, line.balance.projectedCents, line.accounts.map((a) => a.id)]),
+    ).toEqual([
+      ["CHECKING", 156_000, 219_900, 218_400, ["cc"]],
+      ["POCKETS", 0, 10_000, 10_000, ["voiture"]],
+    ]);
+    expect(dashboard.accounts.find((account) => account.id === "voiture")).toMatchObject({ parentName: "Compte Courant", group: "POCKETS" });
   });
 
   it("summarizes the month and compares with the previous one", () => {
     expect(dashboard.income.clearedCents).toBe(100_000);
     expect(dashboard.expense).toEqual({ clearedCents: 26_100, projectedCents: 27_600 });
     expect(dashboard.trend.projectedCents).toBe(72_400);
-    expect(dashboard.previous).toEqual({ totalCents: 156_000, savingsCents: 0, trendCents: 96_000, expenseCents: 4_000 });
+    expect(dashboard.previous).toEqual({ totalCents: 156_000, savingsCents: 0, pocketsCents: 0, trendCents: 96_000, expenseCents: 4_000 });
   });
 
   it("groups expenses by top-level category with children, history and top labels", () => {

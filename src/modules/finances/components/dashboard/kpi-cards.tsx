@@ -11,7 +11,7 @@ function KpiCard({ label, cents, projectedCents, deltaCents, signed, hint }: Kpi
   return (
     <div className="rounded-xl border bg-card p-4">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold tabular-nums ${tone}`}>{signed ? formatSignedCents(cents) : formatCents(cents)}</p>
+      <p className={`mt-1 text-xl font-semibold sm:text-2xl tabular-nums ${tone}`}>{signed ? formatSignedCents(cents) : formatCents(cents)}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {deltaCents !== 0 ? (
           <span className={`inline-flex items-center gap-1 ${deltaCents >= 0 ? "text-emerald-600" : "text-destructive"}`}>
@@ -30,7 +30,7 @@ function KpiCard({ label, cents, projectedCents, deltaCents, signed, hint }: Kpi
 export function KpiCards({ dashboard }: { dashboard: Dashboard }) {
   const previous = `vs ${monthName(dashboard.month.month === 1 ? 12 : dashboard.month.month - 1)}`;
   return (
-    <section className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Indicateurs du mois">
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Indicateurs du mois">
       <KpiCard
         label="Total"
         cents={dashboard.total.clearedCents}
@@ -43,6 +43,13 @@ export function KpiCards({ dashboard }: { dashboard: Dashboard }) {
         cents={dashboard.savings.clearedCents}
         projectedCents={dashboard.savings.projectedCents}
         deltaCents={dashboard.savings.clearedCents - dashboard.previous.savingsCents}
+        hint={previous}
+      />
+      <KpiCard
+        label="Pockets"
+        cents={dashboard.pockets.clearedCents}
+        projectedCents={dashboard.pockets.projectedCents}
+        deltaCents={dashboard.pockets.clearedCents - dashboard.previous.pocketsCents}
         hint={previous}
       />
       <KpiCard

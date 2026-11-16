@@ -1,3 +1,4 @@
+import type { AccountGroup } from "./domain/accounts";
 import type { LabelSuggestion } from "./domain/suggestions";
 import type { ListTransaction } from "./domain/transaction-list";
 import type { AccountType, CategoryKind } from "./domain/types";
@@ -38,4 +39,19 @@ export type TransactionFormOptions = {
   categories: CategoryOption[];
   suggestions: LabelSuggestion[];
   defaultAccountId: string | null;
+};
+
+export type AccountSettingsItem = {
+  id: string;
+  name: string;
+  type: AccountType;
+  parentId: string | null;
+  parentName: string | null;
+  color: string;
+  icon: string | null;
+  archived: boolean;
+  group: AccountGroup;
+  /** Transactions and recurring rules using the account. */
+  usageCount: number;
+  canDelete: boolean;
 };

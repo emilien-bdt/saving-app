@@ -38,6 +38,7 @@ export async function getDashboard(month: YearMonth): Promise<DashboardData> {
       parentId: account.parentId,
       initialBalanceCents: account.initialBalanceCents,
       archived: account.archivedAt !== null,
+      openedOnIso: account.initialBalanceDate.toISOString().slice(0, 10),
     })),
     categories,
     transactions: transactions.map(({ date, ...transaction }) => ({ ...transaction, dateIso: date.toISOString().slice(0, 10) })),
