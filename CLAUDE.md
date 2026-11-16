@@ -61,7 +61,7 @@ Modules prévus (par ordre de priorité) :
 - `npm run db:up` / `db:down` : démarrer / arrêter Postgres (Docker)
 - `npm run dev` : serveur de développement (http://localhost:3000)
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
-- `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
+- `npm run db:migrate` : créer/appliquer une migration puis régénérer le client (Prisma 7 ne le fait plus seul) ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
 - `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …` : import des fichiers Excel (rapport + contrôle des soldes mois par mois)
 - `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour Vercel
 
