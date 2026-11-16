@@ -16,6 +16,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed",
+    "import:excel": "tsx scripts/import-excel.ts",
     "auth:hash": "node scripts/hash-password.mjs",
     "postinstall": "prisma generate"
   },

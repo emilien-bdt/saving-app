@@ -38,7 +38,7 @@ Modules prévus (par ordre de priorité) :
 - Une transaction a : date, montant, type (dépense / revenu / virement), compte, catégorie, libellé, note facultative.
 - Les catégories sont personnalisables (nom, couleur, icône) et peuvent avoir des sous-catégories.
 - Les transactions récurrentes (loyer, abonnements, salaire) doivent pouvoir être générées automatiquement.
-- L'import de mon fichier Excel existant est indispensable (voir `docs/exemple-excel.csv`).
+- L'import de mon fichier Excel existant est indispensable (`src/modules/finances/import/excel`, exemple anonymisé dans `__fixtures__/`).
 
 ## Conventions de code
 - TypeScript strict, pas de `any`.
@@ -59,6 +59,7 @@ Modules prévus (par ordre de priorité) :
 - `npm run dev` : serveur de développement (http://localhost:3000)
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
+- `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …` : import des fichiers Excel (rapport + contrôle des soldes mois par mois)
 - `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour Vercel
 
 ## Décisions
@@ -77,3 +78,4 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Auth sans dépendance : hash scrypt (`node:crypto`) dans `AUTH_PASSWORD_HASH`, session = cookie httpOnly signé HMAC-SHA256 (Web Crypto), 30 jours ; la clé inclut le hash, donc changer de mot de passe déconnecte tous les appareils.
 - 16/11/2026 — Modèle Finances : virement = une seule ligne (`accountId` → `toAccountId`, sans catégorie) ; soldes jamais stockés (calculés dans `domain/balances.ts`) ; solde d'un compte parent = le sien + ses pockets ; Épargne = comptes `SAVINGS` ; Tendance = revenus − dépenses (virements neutres).
 - 16/11/2026 — Suppression d'un `ImportBatch` = annulation de l'import (cascade) ; `importRef` unique rend la ré-importation idempotente.
+- 16/11/2026 — Import Excel : lecteur .xlsx maison (zip + XML, sans dépendance) ; plages de lignes lues dans les formules SUMIF des en-têtes ; 3 mises en page (Livrets jusqu'à 03/2026, transition 04/2026, Pockets Revolut dès 05/2026) ; comptes importés : Compte Courant, Livret A et Livret Jeune (archivés), Matelas de sécurité, pockets Appartement et Voiture ; virements datés fin de mois (`dayUnknown`) ; formules `=a-b` (remboursements) gardées en une transaction nette ; contrôle : soldes « Actuel » recalculés = cellules Excel (95/95 au 16/11/2026).

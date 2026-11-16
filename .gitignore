@@ -50,6 +50,8 @@ next-env.d.ts
 *.xls
 *.xlsx
 *.xlsm
+# anonymized test fixtures only
+!src/**/__fixtures__/*.xlsx
 
 # Claude desktop outputs
 /Claude outputs/
