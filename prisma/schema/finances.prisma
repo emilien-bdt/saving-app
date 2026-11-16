@@ -1,0 +1,158 @@
+// Module Finances. Amounts are integer cents; calendar dates are @db.Date
+// (read back as UTC-midnight Date objects).
+// CHECK constraints (amount > 0, transfer/category consistency…) live in the
+// migration SQL: Prisma cannot express them.
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+}
+
+enum CategoryKind {
+  EXPENSE
+  INCOME
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum TransactionStatus {
+  PLANNED
+  CLEARED
+}
+
+enum RecurrenceFrequency {
+  MONTHLY
+  YEARLY
+}
+
+model Account {
+  id                  String      @id @default(cuid())
+  name                String
+  type                AccountType
+  color               String      @default("#64748b")
+  icon                String?
+  sortOrder           Int         @default(0)
+  initialBalanceCents Int         @default(0)
+  initialBalanceDate  DateTime    @db.Date
+  /// Revolut-like pocket: a child account of a top-level account.
+  parentId            String?
+  parent              Account?    @relation("AccountPockets", fields: [parentId], references: [id], onDelete: Restrict)
+  pockets             Account[]   @relation("AccountPockets")
+  archivedAt          DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  transactions           Transaction[]   @relation("TransactionAccount")
+  incomingTransfers      Transaction[]   @relation("TransactionToAccount")
+  recurringRules         RecurringRule[] @relation("RecurringRuleAccount")
+  incomingRecurringRules RecurringRule[] @relation("RecurringRuleToAccount")
+
+  @@index([parentId])
+  @@map("finances_account")
+}
+
+model Category {
+  id         String       @id @default(cuid())
+  name       String
+  kind       CategoryKind
+  color      String       @default("#64748b")
+  icon       String?
+  sortOrder  Int          @default(0)
+  parentId   String?
+  parent     Category?    @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Restrict)
+  children   Category[]   @relation("CategoryChildren")
+  archivedAt DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
+
+  @@unique([kind, parentId, name])
+  @@index([parentId])
+  @@map("finances_category")
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  date            DateTime          @db.Date
+  /// Excel rows without a day (purchases spread over the month): dated on the last day of the month.
+  dayUnknown      Boolean           @default(false)
+  amountCents     Int
+  type            TransactionType
+  status          TransactionStatus
+  /// Merchant / source, e.g. "Auchan - Herouville".
+  label           String
+  /// normalizeLabel(label): grouping and autocomplete.
+  labelKey        String
+  /// Optional detail, e.g. "Crêpes".
+  note            String?
+  accountId       String
+  account         Account           @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  /// Destination account, TRANSFER only.
+  toAccountId     String?
+  toAccount       Account?          @relation("TransactionToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  /// Required for EXPENSE / INCOME, null for TRANSFER.
+  categoryId      String?
+  category        Category?         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  recurringRuleId String?
+  recurringRule   RecurringRule?    @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+  occurrenceDate  DateTime?         @db.Date
+  importBatchId   String?
+  /// Deleting an import batch removes its transactions (undo an import).
+  importBatch     ImportBatch?      @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+  /// Source position in the Excel file (file/sheet/cell/index): makes re-imports idempotent.
+  importRef       String?           @unique
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([recurringRuleId, occurrenceDate])
+  @@index([date])
+  @@index([accountId, date])
+  @@index([toAccountId, date])
+  @@index([categoryId])
+  @@index([labelKey])
+  @@map("finances_transaction")
+}
+
+model RecurringRule {
+  id          String              @id @default(cuid())
+  label       String
+  note        String?
+  amountCents Int
+  type        TransactionType
+  accountId   String
+  account     Account             @relation("RecurringRuleAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  toAccountId String?
+  toAccount   Account?            @relation("RecurringRuleToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  categoryId  String?
+  category    Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  frequency   RecurrenceFrequency
+  /// 1–31, clamped to the last day of shorter months.
+  dayOfMonth  Int
+  /// 1–12, YEARLY only.
+  monthOfYear Int?
+  startDate   DateTime            @db.Date
+  endDate     DateTime?           @db.Date
+  active      Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  transactions Transaction[]
+
+  @@map("finances_recurring_rule")
+}
+
+model ImportBatch {
+  id           String        @id @default(cuid())
+  fileName     String
+  importedAt   DateTime      @default(now())
+  rowCount     Int
+  transactions Transaction[]
+
+  @@map("finances_import_batch")
+}

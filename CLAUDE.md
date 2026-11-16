@@ -30,6 +30,7 @@ Modules prévus (par ordre de priorité) :
 - Un module = `src/modules/<nom>` (`domain/` logique pure testée, `data/` accès Prisma, `actions/` Server Actions + Zod, `components/`, `module.ts`) + son fichier `prisma/schema/<nom>.prisma` + une ligne dans `src/modules/registry.ts`.
 - Les fichiers de `src/app` restent fins : ils importent depuis les modules.
 - Ajouter un module ne doit pas obliger à modifier les autres.
+- Base : tables préfixées par module (`finances_*`) ; dates calendaires en `@db.Date` (objets `Date` à minuit UTC, cf. `domain/period.ts`) ; règles métier doublées par des contraintes CHECK écrites à la main dans le SQL des migrations (à conserver dans les migrations futures).
 - Auth (`src/shared/auth`) : `src/proxy.ts` redirige vers `/login` toute requête sans session valide ; **chaque Server Action commence par `await requireSession()`** (les actions sont des endpoints POST publics).
 
 ## Règles métier – Finances
@@ -57,7 +58,7 @@ Modules prévus (par ordre de priorité) :
 - `npm run db:up` / `db:down` : démarrer / arrêter Postgres (Docker)
 - `npm run dev` : serveur de développement (http://localhost:3000)
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
-- `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio`
+- `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
 - `npm run auth:hash` : génère `AUTH_PASSWORD_HASH` + `AUTH_SECRET` (à coller dans `.env` et dans Vercel)
 
 ## Décisions
@@ -74,3 +75,5 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Libellé = commerçant/source (obligatoire) ; détail facultatif dans `note` (ex. « Auchan - Herouville(Crêpes) » → label « Auchan - Herouville », note « Crêpes »).
 - 16/11/2026 — PWA iOS (manifest, standalone), pas de mode hors ligne. Récurrences générées à l'ouverture du mois, idempotentes (unique règle + date d'occurrence).
 - 16/11/2026 — Auth sans dépendance : hash scrypt (`node:crypto`) dans `AUTH_PASSWORD_HASH`, session = cookie httpOnly signé HMAC-SHA256 (Web Crypto), 30 jours ; la clé inclut le hash, donc changer de mot de passe déconnecte tous les appareils.
+- 16/11/2026 — Modèle Finances : virement = une seule ligne (`accountId` → `toAccountId`, sans catégorie) ; soldes jamais stockés (calculés dans `domain/balances.ts`) ; solde d'un compte parent = le sien + ses pockets ; Épargne = comptes `SAVINGS` ; Tendance = revenus − dépenses (virements neutres).
+- 16/11/2026 — Suppression d'un `ImportBatch` = annulation de l'import (cascade) ; `importRef` unique rend la ré-importation idempotente.
