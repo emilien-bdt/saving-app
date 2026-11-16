@@ -1,6 +1,6 @@
 # Server deployment (nginx in its own container, reached through a shared Docker network).
 # Variables come from .env next to this file (see .env.production.example).
-#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose up -d --build   (COMPOSE_FILE=docker-compose.prod.yml dans .env)
 name: save
 
 services:
@@ -59,3 +59,5 @@ networks:
 
 volumes:
   save-db:
+    # Nom explicite : jamais partagé avec la base de dev (docker-compose.yml)
+    name: save-prod-db

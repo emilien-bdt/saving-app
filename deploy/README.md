@@ -15,8 +15,8 @@ Puis copier sur le serveur le zip du projet et `save.dump`.
 
 ## 3. Sur le serveur : configuration
 ```bash
-unzip save-deploy.zip -d save && cd save
-cp .env.production.example .env
+unzip save-deploy.zip -d ~/ && cd ~/save
+cp .env.production.example .env   # contient COMPOSE_FILE=docker-compose.prod.yml
 docker network ls            # repérer le réseau du conteneur nginx → PROXY_NETWORK
 openssl rand -hex 24         # → POSTGRES_PASSWORD
 nano .env                    # + AUTH_PASSWORD_HASH / AUTH_SECRET (npm run auth:hash sur le Mac)
@@ -25,10 +25,10 @@ nano .env                    # + AUTH_PASSWORD_HASH / AUTH_SECRET (npm run auth:
 ## 4. Restauration de la base, puis démarrage
 L'ordre compte : restaurer **avant** le premier `up` complet (sinon les migrations créent des tables vides).
 ```bash
-docker compose -f docker-compose.prod.yml up -d save-db
-docker compose -f docker-compose.prod.yml exec -T save-db pg_restore -U save -d save --no-owner < ../save.dump
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml logs save-migrate   # « No pending migrations to apply »
+docker compose up -d save-db
+docker compose exec -T save-db pg_restore -U save -d save --no-owner < ../save.dump
+docker compose up -d --build
+docker compose logs save-migrate   # « No pending migrations to apply »
 ```
 
 ## 5. nginx + certificat
@@ -43,7 +43,7 @@ Les chemins `/var/www/certbot` et `/etc/letsencrypt` doivent être ceux montés 
 ## Mise à jour
 Nouveau zip → remplacer les fichiers (garder `.env`), puis :
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose up -d --build
 ```
 Les nouvelles migrations s'appliquent automatiquement (`save-migrate`).
 
