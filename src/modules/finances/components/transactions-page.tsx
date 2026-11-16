@@ -1,6 +1,4 @@
-import { House } from "lucide-react";
 import { cookies } from "next/headers";
-import Link from "next/link";
 import { requireSession } from "@/shared/auth/server";
 import { todayIso } from "@/shared/lib/today";
 import { getTransactionFormOptions } from "../data/form-options";
@@ -33,12 +31,9 @@ export async function TransactionsPage({ searchParams }: Props) {
   );
 
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-4 px-4 pt-4 pb-28">
-      <header className="flex items-center justify-between gap-2">
-        <Link href="/" className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-muted" aria-label="Accueil">
-          <House className="size-5" aria-hidden />
-        </Link>
-        <h1 className="sr-only">Transactions</h1>
+    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-28 sm:pb-10">
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="sr-only">Journal</h1>
         <MonthNav month={month} currentMonth={currentMonth} params={plainParams} />
         <ViewToggle view={view} />
       </header>

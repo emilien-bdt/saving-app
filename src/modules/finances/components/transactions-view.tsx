@@ -1,6 +1,5 @@
 "use client";
 
-import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { TransactionView } from "../domain/list-filters";
 import { groupByDay, groupByLabel } from "../domain/transaction-list";
@@ -100,14 +99,6 @@ export function TransactionsView({ transactions, view, options, defaultDate }: P
         </ul>
       )}
 
-      <button
-        type="button"
-        onClick={() => open(null)}
-        aria-label="Ajouter une transaction"
-        className="fixed right-5 bottom-[max(1.25rem,env(safe-area-inset-bottom))] inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
-      >
-        <Plus className="size-7" aria-hidden />
-      </button>
 
       {editor ? (
         <TransactionEditor

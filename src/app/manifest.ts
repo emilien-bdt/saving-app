@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Save",
     description: "Application de gestion de vie perso",
     lang: "fr",
-    start_url: "/",
+    start_url: "/finances",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",

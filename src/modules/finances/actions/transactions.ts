@@ -10,7 +10,7 @@ import { type TransactionInput, transactionInputSchema } from "../schemas/transa
 
 export type ActionResult = { ok: true } | { ok: false; error: string; fieldErrors: Record<string, string> };
 
-const TRANSACTIONS_PATH = "/finances/transactions";
+const revalidateFinances = () => revalidatePath("/finances", "layout");
 const idSchema = z.string().min(1).max(64);
 
 const failure = (error: string, fieldErrors: Record<string, string> = {}): ActionResult => ({
@@ -49,7 +49,7 @@ export async function saveTransaction(id: string | null, input: TransactionInput
 
   if (transactionId) await repository.updateTransaction(transactionId.data, data);
   else await repository.createTransaction(data);
-  revalidatePath(TRANSACTIONS_PATH);
+  revalidateFinances();
   return { ok: true };
 }
 
@@ -59,7 +59,7 @@ export async function deleteTransaction(id: string): Promise<ActionResult> {
   if (!parsed.success || !(await repository.deleteTransaction(parsed.data))) {
     return failure("Cette transaction n'existe plus");
   }
-  revalidatePath(TRANSACTIONS_PATH);
+  revalidateFinances();
   return { ok: true };
 }
 
@@ -71,6 +71,6 @@ export async function setTransactionStatus(id: string, status: string): Promise<
   if (!(await repository.setTransactionStatus(parsedId.data, parsedStatus.data))) {
     return failure("Cette transaction n'existe plus");
   }
-  revalidatePath(TRANSACTIONS_PATH);
+  revalidateFinances();
   return { ok: true };
 }

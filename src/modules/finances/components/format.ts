@@ -3,11 +3,17 @@ import { fr } from "date-fns/locale";
 import { formatCents } from "@/shared/lib/money";
 import type { TransactionType } from "../domain/types";
 
-/** "2026-11-03" → "Mardi 3 novembre". */
+/** "2026-11-03" → "Mardi 3 novembre", "2026-11-01" → "Dimanche 1er novembre". */
 export function formatDayHeading(dateIso: string): string {
   const [year, month, day] = dateIso.split("-").map(Number);
-  const text = format(new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1), "EEEE d MMMM", { locale: fr });
+  const date = new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+  const text = `${format(date, "EEEE", { locale: fr })} ${day === 1 ? "1er" : String(day)} ${format(date, "MMMM", { locale: fr })}`;
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** 3 → "mars". */
+export function monthName(month: number, style: "long" | "short" = "long"): string {
+  return format(new Date(2000, month - 1, 1), style === "long" ? "MMMM" : "MMM", { locale: fr });
 }
 
 /** "+12,50 €" for an income, "−12,50 €" for an expense, "12,50 €" for a transfer. */

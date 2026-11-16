@@ -20,9 +20,14 @@ export function TransactionRow({ transaction, account, toAccount, category, show
   const isTransfer = transaction.type === "TRANSFER";
   const details = [
     transaction.note,
-    isTransfer ? `${account?.displayName ?? "?"} → ${toAccount?.displayName ?? "?"}` : showAccount ? account?.displayName : null,
+    isTransfer ? null : showAccount ? account?.displayName : null,
     transaction.status === "PLANNED" ? "prévue" : null,
   ].filter(Boolean);
+  const fallback = isTransfer
+    ? transaction.label.includes("→")
+      ? "Virement interne"
+      : `${account?.displayName ?? "?"} → ${toAccount?.displayName ?? "?"}`
+    : (category?.name ?? "");
 
   return (
     <li className="flex items-center gap-1">
@@ -41,7 +46,7 @@ export function TransactionRow({ transaction, account, toAccount, category, show
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{transaction.label}</span>
           <span className="block truncate text-sm text-muted-foreground">
-            {details.length > 0 ? details.join(" · ") : (category?.name ?? "")}
+            {details.length > 0 ? details.join(" · ") : fallback}
           </span>
         </span>
         <span

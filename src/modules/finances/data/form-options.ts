@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { db } from "@/shared/lib/db";
 import { buildLabelSuggestions } from "../domain/suggestions";
 import type { AccountOption, CategoryOption, TransactionFormOptions } from "../view-models";
 
 /** Accounts, categories (with their usage) and label suggestions for the entry form and the filters. */
-export async function getTransactionFormOptions(): Promise<TransactionFormOptions> {
+export const getTransactionFormOptions = cache(async (): Promise<TransactionFormOptions> => {
   const [accounts, categories, categoryUsage, labelUsage] = await Promise.all([
     db.account.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.category.findMany({
@@ -59,4 +60,4 @@ export async function getTransactionFormOptions(): Promise<TransactionFormOption
     accountOptions.find((account) => !account.archived);
 
   return { accounts: accountOptions, categories: categoryOptions, suggestions, defaultAccountId: defaultAccount?.id ?? null };
-}
+});

@@ -1,13 +1,13 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { SlidersHorizontal, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { TransactionFilters as Filters } from "../domain/list-filters";
 import { statusParam } from "../domain/list-filters";
 import type { AccountOption, CategoryOption } from "../view-models";
 
-const selectClass = "h-9 min-w-0 rounded-lg border bg-background px-2 text-sm";
+const selectClass = "h-9 min-w-0 flex-1 rounded-lg border bg-background px-2 text-sm sm:w-40 sm:flex-none";
 
 type Props = { filters: Filters; accounts: AccountOption[]; categories: CategoryOption[] };
 
@@ -16,6 +16,7 @@ export function TransactionFilters({ filters, accounts, categories }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(filters.query ?? "");
+  const [showFilters, setShowFilters] = useState(false);
 
   const update = (changes: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams);
@@ -42,9 +43,11 @@ export function TransactionFilters({ filters, accounts, categories }: Props) {
   const childrenOf = (id: string) => categories.filter((category) => category.parentId === id);
   const active = Boolean(filters.accountId || filters.categoryId || filters.status || filters.query);
 
+  const activeSelects = [filters.accountId, filters.categoryId, filters.status].filter(Boolean).length;
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <label className="relative min-w-40 flex-1">
+    <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+      <label className="relative min-w-0 flex-1">
         <span className="sr-only">Rechercher</span>
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <input
@@ -55,6 +58,16 @@ export function TransactionFilters({ filters, accounts, categories }: Props) {
           className="h-9 w-full rounded-lg border bg-background pr-2 pl-8 text-base sm:text-sm"
         />
       </label>
+      <button
+        type="button"
+        onClick={() => setShowFilters((value) => !value)}
+        aria-expanded={showFilters}
+        className="inline-flex h-9 items-center gap-1 rounded-lg border px-3 text-sm sm:hidden"
+      >
+        <SlidersHorizontal className="size-4" aria-hidden />
+        Filtres{activeSelects > 0 ? ` (${activeSelects})` : ""}
+      </button>
+      <div className={`${showFilters ? "flex" : "hidden"} w-full flex-wrap gap-2 sm:flex sm:w-auto sm:flex-nowrap`}>
       <select
         aria-label="Compte"
         className={selectClass}
@@ -95,7 +108,7 @@ export function TransactionFilters({ filters, accounts, categories }: Props) {
       </select>
       <select
         aria-label="Statut"
-        className={selectClass}
+        className={`${selectClass} sm:w-28`}
         value={filters.status ? statusParam(filters.status) : ""}
         onChange={(event) => update({ statut: event.target.value || null })}
       >
@@ -103,6 +116,7 @@ export function TransactionFilters({ filters, accounts, categories }: Props) {
         <option value="prevue">Prévues</option>
         <option value="pointee">Pointées</option>
       </select>
+      </div>
       {active ? (
         <button
           type="button"

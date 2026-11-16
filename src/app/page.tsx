@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { appModules } from "@/modules/registry";
 import { LogoutButton } from "@/shared/auth/components/logout-button";
 
 export default function HomePage() {
+  // Single module for now: open it directly (the hub comes back with the "Repas" module).
+  const [onlyModule] = appModules;
+  if (appModules.length === 1 && onlyModule) redirect(onlyModule.href);
+
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
       <div className="flex items-start justify-between gap-4">
