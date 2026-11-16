@@ -15,6 +15,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "auth:hash": "node scripts/hash-password.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

@@ -30,6 +30,7 @@ Modules prévus (par ordre de priorité) :
 - Un module = `src/modules/<nom>` (`domain/` logique pure testée, `data/` accès Prisma, `actions/` Server Actions + Zod, `components/`, `module.ts`) + son fichier `prisma/schema/<nom>.prisma` + une ligne dans `src/modules/registry.ts`.
 - Les fichiers de `src/app` restent fins : ils importent depuis les modules.
 - Ajouter un module ne doit pas obliger à modifier les autres.
+- Auth (`src/shared/auth`) : `src/proxy.ts` redirige vers `/login` toute requête sans session valide ; **chaque Server Action commence par `await requireSession()`** (les actions sont des endpoints POST publics).
 
 ## Règles métier – Finances
 - Les montants sont stockés **en centimes (entiers)**, jamais en nombres à virgule.
@@ -57,6 +58,7 @@ Modules prévus (par ordre de priorité) :
 - `npm run dev` : serveur de développement (http://localhost:3000)
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration ; `db:generate` : régénérer le client ; `db:studio`
+- `npm run auth:hash` : génère `AUTH_PASSWORD_HASH` + `AUTH_SECRET` (à coller dans `.env` et dans Vercel)
 
 ## Décisions
 - 16/11/2026 — Hébergement Vercel + Neon ; PostgreSQL dès le départ (au lieu de SQLite) pour éviter une migration.
@@ -71,3 +73,4 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Opérations Excel sans jour (achats étalés sur le mois) : importées au dernier jour du mois avec `dayUnknown = true`, affichées « plusieurs jours » ; pas à corriger.
 - 16/11/2026 — Libellé = commerçant/source (obligatoire) ; détail facultatif dans `note` (ex. « Auchan - Herouville(Crêpes) » → label « Auchan - Herouville », note « Crêpes »).
 - 16/11/2026 — PWA iOS (manifest, standalone), pas de mode hors ligne. Récurrences générées à l'ouverture du mois, idempotentes (unique règle + date d'occurrence).
+- 16/11/2026 — Auth sans dépendance : hash scrypt (`node:crypto`) dans `AUTH_PASSWORD_HASH`, session = cookie httpOnly signé HMAC-SHA256 (Web Crypto), 30 jours ; la clé inclut le hash, donc changer de mot de passe déconnecte tous les appareils.

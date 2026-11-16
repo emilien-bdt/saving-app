@@ -50,3 +50,6 @@ next-env.d.ts
 *.xls
 *.xlsx
 *.xlsm
+
+# Claude desktop outputs
+/Claude outputs/
