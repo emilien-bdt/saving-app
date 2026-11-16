@@ -1,0 +1,16 @@
+.git
+node_modules
+.nm-trash
+.next
+.env*
+!.env.production.example
+*.tsbuildinfo
+next-env.d.ts
+src/generated
+CLAUDE.md
+Claude outputs
+*.dump
+*.xls
+*.xlsx
+*.xlsm
+!src/**/__fixtures__/*.xlsx

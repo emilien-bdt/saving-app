@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 16/11/2026, étape 8).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 17/11/2026, étape 9).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -8,7 +8,7 @@
 | | |
 |---|---|
 | Module en service | **Finances** (Repas : pas commencé) |
-| Environnement | Local uniquement (`npm run dev`, Postgres Docker). **Pas encore déployé** sur Vercel + Neon |
+| Environnement | Local (`npm run dev`, Postgres Docker) ; déploiement prêt pour https://save.emilienbourdet.fr (serveur perso, Docker + nginx) — **mise en ligne à faire** (`deploy/README.md`) |
 | Git | branche `main`, commits non poussés (`git push` à faire) |
 | Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
 | Tests | 192 tests de logique (Vitest), typecheck et lint au vert |
@@ -61,7 +61,7 @@
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
 4. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
-5. **Déploiement** Vercel + Neon, import des données en production.
+5. **Mise en ligne** sur le serveur (fichiers prêts, voir `deploy/README.md`) : DNS, `.env`, restauration de la base locale, certificat.
 6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), module **Repas**.
 
 ## Limites connues
@@ -93,3 +93,4 @@ Puis http://localhost:3000 (ou http://192.168.1.28:3000 depuis l'iPhone sur le m
 | 6 | `2f18829` | Piloter (tableau de bord), navigation commune |
 | 7 | `4c3830f` | Comptes : blocs Courant / Épargne / Pockets, gestion dans Paramètres |
 | 8 | `ff6ff6c` | Intérêts journaliers des comptes d'épargne (taux historisés, calcul à la volée) |
+| 9 | _(voir git log)_ | Déploiement Docker sur serveur perso (Dockerfile, compose prod, nginx, sauvegardes) |

@@ -1,0 +1,61 @@
+# Server deployment (nginx in its own container, reached through a shared Docker network).
+# Variables come from .env next to this file (see .env.production.example).
+#   docker compose -f docker-compose.prod.yml up -d --build
+name: save
+
+services:
+  save-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: save
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
+      POSTGRES_DB: save
+    volumes:
+      - save-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U save -d save"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  # Applies pending Prisma migrations (incl. hand-written CHECK/triggers), then exits.
+  save-migrate:
+    build:
+      context: .
+      target: builder
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: postgresql://save:${POSTGRES_PASSWORD}@save-db:5432/save
+    depends_on:
+      save-db:
+        condition: service_healthy
+    restart: "no"
+    networks: [internal]
+
+  save-app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://save:${POSTGRES_PASSWORD}@save-db:5432/save
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH:?AUTH_PASSWORD_HASH manquant dans .env}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET manquant dans .env}
+    expose:
+      - "3000"
+    depends_on:
+      save-migrate:
+        condition: service_completed_successfully
+    networks: [internal, proxy]
+
+networks:
+  internal:
+  # Network of the nginx container (docker network ls) — reaches the app as save-app:3000.
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:?PROXY_NETWORK manquant dans .env}
+
+volumes:
+  save-db:

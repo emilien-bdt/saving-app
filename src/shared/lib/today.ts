@@ -1,4 +1,4 @@
-/** The app is used from France; the server (Vercel) runs in UTC. */
+/** The app is used from France; the server (Docker) runs in UTC. */
 export const APP_TIME_ZONE = "Europe/Paris";
 
 /** Today's calendar date in the app's time zone, as "AAAA-MM-JJ". */

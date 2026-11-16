@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Generates AUTH_PASSWORD_HASH (+ a fresh AUTH_SECRET), writes them into .env
-// (when it exists) and prints them for Vercel.
+// (when it exists) and prints them for the server .env.
 // Usage: npm run auth:hash            (prompts, input hidden)
 //        echo -n "pw" | npm run auth:hash
 // Same format as src/shared/auth/password.ts (checked by password.test.ts).
@@ -73,7 +73,7 @@ async function main() {
     writeFileSync(".env", upsertEnv(readFileSync(".env", "utf8"), values));
     console.log(".env mis à jour (redémarre `npm run dev`).");
   }
-  console.log("\nPour Vercel (Settings › Environment Variables) :");
+  console.log("\nPour le .env du serveur :");
   console.log(lines.join("\n"));
 }
 

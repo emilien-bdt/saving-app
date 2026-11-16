@@ -20,11 +20,11 @@ Modules prévus (par ordre de priorité) :
 ## Stack technique
 - Next.js 16 (App Router) + TypeScript strict (`noUncheckedIndexedAccess`)
 - Tailwind CSS 4 + shadcn/ui (composants dans `src/shared/ui`)
-- Base de données : PostgreSQL via Prisma 7 (adapter `pg`) ; Docker en local, Neon en production
+- Base de données : PostgreSQL via Prisma 7 (adapter `pg`) ; Docker en local et en production
 - Validation : Zod ; dates : date-fns (locale `fr`)
 - Graphiques : SVG maison, sans dépendance (Recharts possible plus tard)
 - Tests : Vitest
-- Hébergement : Vercel + Neon
+- Hébergement : serveur perso en Docker (`docker-compose.prod.yml`), derrière nginx + certbot (conteneurs) — https://save.emilienbourdet.fr ; procédure dans `deploy/README.md`
 
 ## Architecture
 - Chaque domaine est un **module indépendant** (`/src/modules/finances`, `/src/modules/repas`…) avec son propre modèle de données, ses pages et sa logique.
@@ -63,10 +63,10 @@ Modules prévus (par ordre de priorité) :
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration puis régénérer le client (Prisma 7 ne le fait plus seul) ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
 - `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …` : import des fichiers Excel (rapport + contrôle des soldes mois par mois)
-- `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour Vercel
+- `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour le `.env` du serveur
 
 ## Décisions
-- 16/11/2026 — Hébergement Vercel + Neon ; PostgreSQL dès le départ (au lieu de SQLite) pour éviter une migration.
+- 16/11/2026 — Hébergement Vercel + Neon (→ révisé le 17/11/2026 : serveur perso, voir plus bas) ; PostgreSQL dès le départ (au lieu de SQLite) pour éviter une migration.
 - 16/11/2026 — Transaction : une seule date ; statut `PLANNED` (prévue) / `CLEARED` (pointée) → soldes Actuel et Prévisionnel.
 - 16/11/2026 — Comptes et pockets (façon Revolut : `Account.parentId`) ajoutables, modifiables, archivables ; un compte avec transactions s'archive au lieu d'être supprimé.
 - 16/11/2026 — Tickets restaurant : revenu sur le Compte Courant (catégorie dédiée).
@@ -88,3 +88,4 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Pages : `/finances` = Piloter (tableau de bord, calculs dans `domain/dashboard.ts`), `/finances/transactions` = Journal, `/finances/parametres` ; navigation commune (barre haute sur ordinateur, barre d'onglets sur iPhone) avec « + Saisir » partout ; graphiques en SVG maison (pas de dépendance) ; `/` redirige vers le seul module tant qu'il n'y en a qu'un ; l'app iPhone s'ouvre sur `/finances`.
 - 16/11/2026 — Comptes : trois blocs **Courant / Épargne / Pockets**, chacun avec son propre total (un pocket ne s'ajoute plus à son compte ni à l'Épargne) ; affichés dans Piloter (carte Comptes + indicateur Pockets), pas d'onglet ni de page de détail par compte. Gestion dans Paramètres › Comptes (ajouter, modifier, archiver/désarchiver, supprimer si inutilisé, ordre ↑↓). Un nouveau compte démarre à 0 € à sa date de création ; le solde initial n'est jamais modifiable, le solde n'évolue que par des opérations et virements. Pockets sur un seul niveau (trigger SQL `finances_account_pocket_depth`) ; type d'un pocket sans effet (stocké `SAVINGS`).
 - 16/11/2026 — Intérêts journaliers (épargne Revolut, étape 8) : comptes d'épargne uniquement (pas les pockets) ; taux annuel historisé par compte (table `finances_interest_rate`, `rateBp` en points de base, unique compte + date, « à partir du », modifiable même dans le passé, même date = remplacé, 0 = arrêt) ; calcul dans `domain/interest.ts`, injecté comme transactions calculées (`computed`, jamais en base, jamais « à pointer », non modifiables) dans Piloter et le Journal ; intérêts calculés à la volée (jamais stockés, comme les soldes) : chaque jour, solde de fin de journée × taux / 365, **arrondi au centime chaque jour**, ajouté au solde du lendemain ; rien si solde ≤ 0 ; jusqu'à hier = Actuel, jusqu'à fin de mois = Prévisionnel ; une ligne calculée « Intérêts » par mois et par compte, comptée comme revenu dans la Tendance. Aucun intérêt saisi dans l'Excel (pas de doublon à gérer).
+- 17/11/2026 — Déploiement sur mon serveur (au lieu de Vercel + Neon) : `save.emilienbourdet.fr` ; image Next.js `standalone` (`Dockerfile` multi-étapes) ; `docker-compose.prod.yml` = `save-db` (Postgres 17, aucun port publié) + `save-migrate` (`prisma migrate deploy` à chaque démarrage) + `save-app` (rejoint le réseau Docker du conteneur nginx, `PROXY_NETWORK`) ; vhost nginx + certbot fournis dans `deploy/nginx/` ; transfert par zip (sans `CLAUDE.md` ni `Claude outputs`) ; base initiale = `pg_dump` de la base locale ; sauvegarde quotidienne `deploy/backup.sh`.
