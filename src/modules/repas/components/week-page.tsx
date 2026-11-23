@@ -3,6 +3,7 @@ import { todayIso } from "@/shared/lib/today";
 import { getDishOptions } from "../data/dishes";
 import { getWeekMeals, toView } from "../data/meals";
 import { addDays, formatWeekParam, mondayOf, parseIsoDate, parseWeekParam, toIsoDate, weekDays } from "../domain/week";
+import clay from "./clay.module.css";
 import { dayLabel, weekTitle } from "./labels";
 import { type DayView, WeekBoard } from "./week-board";
 
@@ -26,7 +27,8 @@ export async function WeekPage({ searchParams }: Props) {
   });
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 pt-4 pb-28 sm:pb-10">
+    <div className={clay.page}>
+    <main className="mx-auto w-full max-w-[1800px] px-4 pt-5 pb-28 sm:px-6 sm:pb-10">
       <WeekBoard
         week={formatWeekParam(monday)}
         title={weekTitle(toIsoDate(monday), toIsoDate(addDays(monday, 6)))}
@@ -37,5 +39,6 @@ export async function WeekPage({ searchParams }: Props) {
         dishes={dishes}
       />
     </main>
+    </div>
   );
 }

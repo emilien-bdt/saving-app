@@ -1,12 +1,27 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, GripVertical, Lock, LockOpen, Plus, RefreshCw, Sparkles, Undo2 } from "lucide-react";
+import {
+  ChefHat,
+  ChevronLeft,
+  ChevronRight,
+  CookingPot,
+  DoorOpen,
+  GripVertical,
+  Lock,
+  LockOpen,
+  Moon,
+  RefreshCw,
+  Soup,
+  Sparkles,
+  Sun,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
-import { type PointerEvent as ReactPointerEvent, useOptimistic, useState, useTransition } from "react";
-import { Button } from "@/shared/ui/button";
-import { generateWeek, moveMeal, setMealValidated, setWeekValidated } from "../actions/meals";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, useOptimistic, useState, useTransition } from "react";
+import { clearMeal, generateWeek, moveMeal, setMealValidated, setWeekValidated } from "../actions/meals";
 import type { MealSlot } from "../domain/week";
 import type { DishOption, MealView } from "../view-models";
+import clay from "./clay.module.css";
 import { dishHue, mealTitle, SLOT_LABELS } from "./labels";
 import { MealEditor } from "./meal-editor";
 
@@ -33,6 +48,7 @@ const refOf = (key: Key) => {
 type Change =
   | { type: "move"; from: Key; to: Key }
   | { type: "validate"; key: Key; validated: boolean }
+  | { type: "clear"; key: Key }
   | { type: "validateAll"; validated: boolean };
 
 function applyChange(days: readonly DayView[], change: Change): DayView[] {
@@ -54,6 +70,8 @@ function applyChange(days: readonly DayView[], change: Change): DayView[] {
   } else if (change.type === "validate") {
     const meal = cells.get(change.key);
     if (meal) cells.set(change.key, { ...meal, status: status(change.validated) });
+  } else if (change.type === "clear") {
+    cells.set(change.key, null);
   } else {
     for (const [key, meal] of cells) if (meal) cells.set(key, { ...meal, status: status(change.validated) });
   }
@@ -66,7 +84,10 @@ function applyChange(days: readonly DayView[], change: Change): DayView[] {
 
 type Drag = { from: Key; title: string; x: number; y: number; over: Key | null };
 
-/** The week grid: generate, validate (lock), drag and drop, edit a cell. */
+const SlotIcon = ({ slot }: { slot: MealSlot }) =>
+  slot === "LUNCH" ? <Sun className="size-3.5" aria-hidden /> : <Moon className="size-3.5" aria-hidden />;
+
+/** The week grid: generate, validate (lock), drag and drop, delete, edit a cell. */
 export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBeforeDinner, dishes }: Props) {
   const [optimisticDays, addChange] = useOptimistic(days, applyChange);
   const [pending, startTransition] = useTransition();
@@ -89,14 +110,12 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
       setBusyKey(null);
     });
 
-  const generate = (only: Key | null) =>
-    run(only ?? "week", null, () => generateWeek(week, only ? refOf(only) : null));
+  const generate = (only: Key | null) => run(only ?? "week", null, () => generateWeek(week, only ? refOf(only) : null));
 
   const previousMealDish = (key: Key): string | null => {
     const { date, slot } = refOf(key);
     const index = optimisticDays.findIndex((day) => day.dateIso === date);
-    const before =
-      slot === "DINNER" ? optimisticDays[index]?.lunch : index > 0 ? optimisticDays[index - 1]?.dinner : dayBeforeDinner;
+    const before = slot === "DINNER" ? optimisticDays[index]?.lunch : index > 0 ? optimisticDays[index - 1]?.dinner : dayBeforeDinner;
     return before && before.kind !== "OUT" ? before.dishName : null;
   };
 
@@ -123,137 +142,158 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
     const key = keyOf(day.dateIso, slot);
     const meal = slot === "LUNCH" ? day.lunch : day.dinner;
     const isOver = drag?.over === key && drag.from !== key;
-    const base = "group relative flex min-h-[4.5rem] flex-col rounded-xl border p-2 text-left transition-colors";
+    const label = `${day.label} ${SLOT_LABELS[slot]}`;
 
     if (!meal) {
       return (
-        <div data-slot-key={key} className={`${base} border-dashed ${isOver ? "border-primary bg-primary/5" : ""}`}>
-          <span className="text-[0.7rem] font-medium tracking-wide text-muted-foreground uppercase">{SLOT_LABELS[slot]}</span>
+        <div data-slot-key={key} className={`${clay.empty} ${isOver ? clay.over : ""} flex min-h-32 flex-col p-3`}>
+          <span className={clay.slotLabel}>
+            <SlotIcon slot={slot} />
+            {SLOT_LABELS[slot]}
+          </span>
           <button
             type="button"
             onClick={() => setEditing({ key, meal: null })}
-            className="mt-1 inline-flex flex-1 items-center justify-center gap-1 rounded-lg text-sm text-muted-foreground hover:bg-muted"
-            aria-label={`${day.label} ${SLOT_LABELS[slot]} : ajouter un repas`}
+            className="mt-1 flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl text-sm font-semibold opacity-70 hover:opacity-100"
+            aria-label={`${label} : ajouter un repas`}
           >
-            <Plus className="size-4" aria-hidden />
+            <CookingPot className="size-7" aria-hidden />
+            Ajouter
           </button>
         </div>
       );
     }
 
     const validated = meal.status === "VALIDATED";
-    const hue = meal.dishId ? dishHue(meal.dishId) : null;
-    const style =
-      meal.kind === "OUT" || hue === null
-        ? undefined
-        : { backgroundColor: `oklch(0.97 0.03 ${hue})`, borderColor: validated ? `oklch(0.72 0.09 ${hue})` : undefined };
+    const style = meal.kind !== "OUT" && meal.dishId ? ({ "--hue": dishHue(meal.dishId) } as CSSProperties) : undefined;
+    const classes = [
+      clay.meal,
+      meal.kind === "OUT" ? clay.out : validated ? "" : clay.proposed,
+      isOver ? clay.over : "",
+      drag?.from === key ? clay.dragging : "",
+    ].join(" ");
 
     return (
-      <div
-        data-slot-key={key}
-        style={style}
-        className={`${base} ${validated ? "border-solid" : "border-dashed"} ${meal.kind === "OUT" ? "bg-muted/60" : ""} ${
-          isOver ? "ring-2 ring-primary" : ""
-        } ${drag?.from === key ? "opacity-40" : ""} dark:bg-card`}
-      >
-        <div className="flex items-center justify-between gap-1">
-          <span className="text-[0.7rem] font-medium tracking-wide text-muted-foreground uppercase">{SLOT_LABELS[slot]}</span>
-          <span className="flex items-center">
-            {!validated && meal.kind !== "OUT" ? (
-              <button
-                type="button"
-                onClick={() => generate(key)}
-                disabled={pending}
-                aria-label="Proposer un autre plat"
-                className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-background/70 hover:text-foreground"
-              >
-                <RefreshCw className={`size-3.5 ${busyKey === key ? "animate-spin" : ""}`} aria-hidden />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              aria-pressed={validated}
-              aria-label={validated ? "Déverrouiller" : "Valider"}
-              onClick={() => run(key, { type: "validate", key, validated: !validated }, () => setMealValidated(refOf(key), !validated))}
-              className={`inline-flex size-7 items-center justify-center rounded-md hover:bg-background/70 ${
-                validated ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
-              }`}
-            >
-              {validated ? <Lock className="size-3.5" aria-hidden /> : <LockOpen className="size-3.5" aria-hidden />}
-            </button>
-            <button
-              type="button"
-              aria-label={`Déplacer « ${mealTitle(meal)} »`}
-              onPointerDown={(event) => startDrag(event, key, meal)}
-              onPointerMove={moveDrag}
-              onPointerUp={endDrag}
-              onPointerCancel={() => setDrag(null)}
-              className="inline-flex size-7 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:bg-background/70 active:cursor-grabbing"
-            >
-              <GripVertical className="size-3.5" aria-hidden />
-            </button>
-          </span>
-        </div>
-        <button type="button" onClick={() => setEditing({ key, meal })} className="mt-0.5 flex-1 text-left">
+      <div data-slot-key={key} style={style} className={`${classes} flex min-h-32 flex-col`}>
+        <span className={clay.slotLabel}>
+          <SlotIcon slot={slot} />
+          {SLOT_LABELS[slot]}
+          {!validated ? <span className="font-semibold normal-case tracking-normal">· proposé</span> : null}
+        </span>
+        <button type="button" onClick={() => setEditing({ key, meal })} className="mt-1 mb-2 flex-1 text-left">
           {meal.kind === "LEFTOVER" ? (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Undo2 className="size-3" aria-hidden />
+            <span className="mb-0.5 inline-flex items-center gap-1 text-xs font-bold opacity-75">
+              <Soup className="size-3.5" aria-hidden />
               Reste
             </span>
           ) : null}
-          <span className={`line-clamp-3 text-sm leading-snug ${meal.kind === "OUT" ? "text-muted-foreground italic" : "font-medium"}`}>
-            {mealTitle(meal)}
-          </span>
-          {meal.note ? <span className="mt-0.5 block truncate text-xs text-muted-foreground">{meal.note}</span> : null}
+          {meal.kind === "OUT" ? (
+            <span className="mb-0.5 inline-flex items-center gap-1 text-xs font-bold opacity-75">
+              <DoorOpen className="size-3.5" aria-hidden />
+              Dehors
+            </span>
+          ) : null}
+          <span className={`${clay.mealTitle} line-clamp-3 block`}>{mealTitle(meal)}</span>
+          {meal.note ? <span className="mt-0.5 block truncate text-sm opacity-75">{meal.note}</span> : null}
         </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            aria-pressed={validated}
+            aria-label={validated ? `${label} : déverrouiller` : `${label} : valider`}
+            title={validated ? "Validé (la génération n'y touche pas)" : "Valider"}
+            onClick={() => run(key, { type: "validate", key, validated: !validated }, () => setMealValidated(refOf(key), !validated))}
+            className={`${clay.iconBtn} ${validated ? clay.locked : ""}`}
+          >
+            {validated ? <Lock className="size-4" aria-hidden /> : <LockOpen className="size-4" aria-hidden />}
+          </button>
+          {!validated && meal.kind !== "OUT" ? (
+            <button
+              type="button"
+              onClick={() => generate(key)}
+              disabled={pending}
+              aria-label={`${label} : proposer un autre plat`}
+              title="Proposer un autre plat"
+              className={clay.iconBtn}
+            >
+              <RefreshCw className={`size-4 ${busyKey === key ? "animate-spin" : ""}`} aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            aria-label={`${label} : supprimer « ${mealTitle(meal)} »`}
+            title="Supprimer"
+            onClick={() => run(key, { type: "clear", key }, () => clearMeal(refOf(key)))}
+            className={`${clay.iconBtn} ${clay.danger}`}
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label={`Déplacer « ${mealTitle(meal)} »`}
+            title="Glisser pour déplacer"
+            onPointerDown={(event) => startDrag(event, key, meal)}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={() => setDrag(null)}
+            className={`${clay.iconBtn} ml-auto cursor-grab touch-none active:cursor-grabbing`}
+          >
+            <GripVertical className="size-4" aria-hidden />
+          </button>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1">
-          <Link href={`/repas?semaine=${previousWeek}`} aria-label="Semaine précédente" className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-muted">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Link href={`/repas?semaine=${previousWeek}`} aria-label="Semaine précédente" className={clay.iconBtn}>
             <ChevronLeft className="size-5" aria-hidden />
           </Link>
-          <h1 className="min-w-0 text-lg font-semibold sm:text-xl">{title}</h1>
-          <Link href={`/repas?semaine=${nextWeek}`} aria-label="Semaine suivante" className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-muted">
+          <div className="px-1">
+            <h1 className="flex items-center gap-2 text-2xl font-extrabold sm:text-3xl">
+              <ChefHat className="size-7 shrink-0" aria-hidden />
+              {title}
+            </h1>
+            <p className="text-sm font-medium opacity-70">
+              {validatedCount}/{meals.length} repas validés · pointillés = proposition, cadenas = gardé à la génération
+            </p>
+          </div>
+          <Link href={`/repas?semaine=${nextWeek}`} aria-label="Semaine suivante" className={clay.iconBtn}>
             <ChevronRight className="size-5" aria-hidden />
           </Link>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3 pb-1">
           {meals.length > 0 ? (
-            <Button
-              variant="outline"
-              size="lg"
+            <button
+              type="button"
               disabled={pending}
               onClick={() => run("week", { type: "validateAll", validated: !allValidated }, () => setWeekValidated(week, !allValidated))}
+              className={`${clay.btn} ${clay.btnGreen}`}
             >
-              {allValidated ? <LockOpen aria-hidden /> : <Lock aria-hidden />}
+              {allValidated ? <LockOpen className="size-5" aria-hidden /> : <Lock className="size-5" aria-hidden />}
               {allValidated ? "Tout déverrouiller" : "Tout valider"}
-            </Button>
+            </button>
           ) : null}
-          <Button size="lg" disabled={pending || (allValidated && meals.length === 14)} onClick={() => generate(null)}>
-            <Sparkles className={busyKey === "week" ? "animate-pulse" : undefined} aria-hidden />
+          <button type="button" disabled={pending || (allValidated && meals.length === 14)} onClick={() => generate(null)} className={clay.btn}>
+            <Sparkles className={`size-5 ${busyKey === "week" ? "animate-pulse" : ""}`} aria-hidden />
             {meals.length > validatedCount ? "Regénérer" : "Générer"}
-          </Button>
+          </button>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {validatedCount}/{meals.length} repas validés · les cases en pointillés sont des propositions, le cadenas les protège de la génération.
-      </p>
-      {error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="rounded-2xl bg-red-100 px-4 py-2 font-semibold text-red-800">{error}</p> : null}
 
-      <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+      <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
         {optimisticDays.map((day) => (
-          <li key={day.dateIso} className={`rounded-2xl border bg-card p-2 ${day.isToday ? "border-primary/60 ring-1 ring-primary/30" : ""}`}>
-            <h2 className={`mb-2 px-1 text-sm font-semibold ${day.isToday ? "text-primary" : ""}`}>
+          <li key={day.dateIso} className={`${clay.day} ${day.isToday ? clay.today : ""}`}>
+            <h2 className={`${clay.dayTitle} mb-3 px-1`}>
               {day.label}
-              {day.isToday ? <span className="ml-1.5 text-xs font-normal">· aujourd&apos;hui</span> : null}
+              {day.isToday ? <span className="ml-1.5 text-sm font-semibold opacity-70">· aujourd&apos;hui</span> : null}
             </h2>
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
+            <div className="grid gap-3">
               {cell(day, "LUNCH")}
               {cell(day, "DINNER")}
             </div>
@@ -262,10 +302,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
       </ol>
 
       {drag ? (
-        <div
-          className="pointer-events-none fixed z-50 max-w-48 -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-background px-3 py-2 text-sm font-medium shadow-lg"
-          style={{ left: drag.x, top: drag.y }}
-        >
+        <div className={`${clay.ghost} pointer-events-none fixed z-50 max-w-56 -translate-x-1/2 -translate-y-1/2`} style={{ left: drag.x, top: drag.y }}>
           {drag.title}
         </div>
       ) : null}

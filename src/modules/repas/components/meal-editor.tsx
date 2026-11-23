@@ -1,19 +1,17 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { Lock, LockOpen, X } from "lucide-react";
+import { Lock, LockOpen, Trash2, X } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
-import { Button } from "@/shared/ui/button";
 import { clearMeal, saveMeal } from "../actions/meals";
 import type { MealKind } from "../domain/grid";
 import type { MealSlot } from "../domain/week";
 import type { DishOption, MealView } from "../view-models";
+import clay from "./clay.module.css";
 import { longDayLabel, SLOT_LABELS } from "./labels";
 
-const inputClass =
-  "h-11 w-full rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive";
-const chipClass =
-  "rounded-full border px-3 py-1.5 text-sm aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground";
+const inputClass = `${clay.field} aria-invalid:ring-2 aria-invalid:ring-red-400`;
+const chipClass = clay.chip;
 
 const KINDS: { kind: MealKind; label: string }[] = [
   { kind: "DISH", label: "Plat" },
@@ -84,13 +82,13 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
         <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Popup
           initialFocus={dishRef}
-          className="fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-2xl bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl outline-none sm:inset-auto sm:top-1/2 sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl"
+          className={`${clay.sheet} fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-[2rem] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] outline-none sm:inset-auto sm:top-1/2 sm:left-1/2 sm:w-full sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[2rem]`}
         >
           <div className="mb-3 flex items-center justify-between">
-            <Dialog.Title className="text-lg font-semibold">
+            <Dialog.Title className="text-xl font-extrabold">
               {pickSlot ? "Nouveau repas" : `${longDayLabel(values.dateIso)} · ${SLOT_LABELS[values.slot]}`}
             </Dialog.Title>
-            <Dialog.Close className="inline-flex size-9 items-center justify-center rounded-lg hover:bg-muted" aria-label="Fermer">
+            <Dialog.Close className={clay.iconBtn} aria-label="Fermer">
               <X className="size-5" aria-hidden />
             </Dialog.Close>
           </div>
@@ -113,7 +111,7 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
                   required
                   value={values.dateIso}
                   onChange={(event) => set({ dateIso: event.target.value })}
-                  className="h-9 rounded-full border bg-background px-3 text-sm"
+                  className={`${clay.chip} h-10`}
                 />
                 {(["LUNCH", "DINNER"] as const).map((option) => (
                   <button key={option} type="button" aria-pressed={values.slot === option} onClick={() => set({ slot: option })} className={chipClass}>
@@ -220,7 +218,7 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
               type="button"
               aria-pressed={values.validated}
               onClick={() => set({ validated: !values.validated })}
-              className="inline-flex items-center gap-2 justify-self-start rounded-full border px-3 py-1.5 text-sm aria-pressed:border-emerald-600 aria-pressed:bg-emerald-600/10 aria-pressed:text-emerald-700 dark:aria-pressed:text-emerald-400"
+              className={`${clay.btn} ${values.validated ? clay.btnGreen : clay.btnPlain} justify-self-start text-sm`}
             >
               {values.validated ? <Lock className="size-4" aria-hidden /> : <LockOpen className="size-4" aria-hidden />}
               {values.validated ? "Validé : la génération n'y touchera pas" : "Proposé : peut être regénéré"}
@@ -230,15 +228,16 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
 
             <div className="flex items-center justify-between gap-2">
               {meal ? (
-                <Button type="button" variant="destructive" size="lg" disabled={pending} onClick={clear}>
-                  Vider la case
-                </Button>
+                <button type="button" disabled={pending} onClick={clear} className={`${clay.btn} ${clay.btnRed}`}>
+                  <Trash2 className="size-5" aria-hidden />
+                  Supprimer
+                </button>
               ) : (
                 <span />
               )}
-              <Button type="submit" size="lg" disabled={pending}>
+              <button type="submit" disabled={pending} className={clay.btn}>
                 Enregistrer
-              </Button>
+              </button>
             </div>
           </form>
         </Dialog.Popup>

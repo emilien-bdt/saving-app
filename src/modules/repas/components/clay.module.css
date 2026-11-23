@@ -1,0 +1,286 @@
+/*
+ * "Pâte à modeler" look of the Repas module: soft pastel shapes, thick rounded
+ * edges, a hard shadow underneath (like a piece of clay standing on the table)
+ * and inner highlights. Each dish has its own hue (--hue), set inline.
+ */
+
+.page {
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 8% 0%, oklch(0.93 0.06 55 / 0.7) 0, transparent 32%),
+    radial-gradient(circle at 92% 12%, oklch(0.93 0.07 140 / 0.6) 0, transparent 30%),
+    radial-gradient(circle at 50% 100%, oklch(0.93 0.05 25 / 0.5) 0, transparent 40%),
+    oklch(0.975 0.02 80);
+  color: oklch(0.3 0.05 50);
+  min-height: 100dvh;
+}
+
+/* ---------- Day card: a flat slab of beige clay ---------- */
+.day {
+  border-radius: 2rem;
+  padding: 0.85rem;
+  background: oklch(0.955 0.03 78);
+  box-shadow:
+    8px 12px 22px oklch(0.55 0.08 60 / 0.22),
+    -6px -6px 14px oklch(1 0 0 / 0.85),
+    inset 3px 3px 4px oklch(1 0 0 / 0.8),
+    inset -4px -5px 8px oklch(0.55 0.06 60 / 0.12);
+}
+
+.today {
+  background: oklch(0.94 0.05 70);
+  outline: 3px solid oklch(0.78 0.14 50);
+  outline-offset: 4px;
+}
+
+.dayTitle {
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Meals: coloured clay blobs ---------- */
+.meal {
+  --hue: 60;
+  position: relative;
+  border-radius: 1.6rem;
+  padding: 0.7rem 0.8rem 0.6rem;
+  background: oklch(0.88 0.1 var(--hue));
+  color: oklch(0.3 0.08 var(--hue));
+  box-shadow:
+    0 6px 0 oklch(0.7 0.12 var(--hue)),
+    4px 12px 16px oklch(0.45 0.1 var(--hue) / 0.25),
+    inset 5px 5px 7px oklch(1 0 0 / 0.6),
+    inset -5px -6px 9px oklch(0.5 0.12 var(--hue) / 0.2);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.meal:hover {
+  transform: translateY(-2px) rotate(-0.4deg);
+}
+
+/* Proposed = fresh, still soft clay: paler, with a stitched outline. */
+.proposed {
+  background: oklch(0.95 0.05 var(--hue));
+  box-shadow:
+    0 4px 0 oklch(0.84 0.07 var(--hue)),
+    inset 4px 4px 6px oklch(1 0 0 / 0.75),
+    inset -4px -5px 8px oklch(0.55 0.1 var(--hue) / 0.12);
+  outline: 2px dashed oklch(0.68 0.12 var(--hue) / 0.55);
+  outline-offset: -7px;
+}
+
+.out {
+  --hue: 250;
+  background: oklch(0.93 0.012 250);
+  color: oklch(0.45 0.03 250);
+  font-style: italic;
+  box-shadow:
+    0 5px 0 oklch(0.8 0.02 250),
+    inset 4px 4px 6px oklch(1 0 0 / 0.7),
+    inset -4px -5px 8px oklch(0.5 0.03 250 / 0.12);
+}
+
+/* Empty slot: a dent pressed into the clay. */
+.empty {
+  border-radius: 1.6rem;
+  background: oklch(0.93 0.025 78);
+  box-shadow:
+    inset 5px 6px 10px oklch(0.55 0.06 60 / 0.22),
+    inset -4px -4px 8px oklch(1 0 0 / 0.85);
+  color: oklch(0.55 0.05 60);
+}
+
+.over {
+  outline: 3px solid oklch(0.72 0.16 45);
+  outline-offset: 2px;
+}
+
+.dragging {
+  opacity: 0.35;
+}
+
+.slotLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+
+.mealTitle {
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+/* ---------- Buttons: little clay pebbles that squash when pressed ---------- */
+.iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.55);
+  color: inherit;
+  box-shadow:
+    0 3px 0 oklch(0.5 0.05 60 / 0.25),
+    inset 2px 2px 3px oklch(1 0 0 / 0.8);
+  transition: transform 100ms ease;
+}
+
+.iconBtn:hover {
+  background: oklch(1 0 0 / 0.8);
+}
+
+.iconBtn:active {
+  transform: translateY(2px);
+  box-shadow: inset 2px 2px 4px oklch(0.5 0.05 60 / 0.25);
+}
+
+.iconBtn:disabled {
+  opacity: 0.5;
+}
+
+.danger {
+  color: oklch(0.52 0.19 27);
+}
+
+.locked {
+  background: oklch(0.86 0.12 150);
+  color: oklch(0.35 0.1 150);
+}
+
+.btn {
+  --hue: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.65rem 1.2rem;
+  font-weight: 800;
+  font-size: 1rem;
+  background: oklch(0.83 0.13 var(--hue));
+  color: oklch(0.28 0.08 var(--hue));
+  box-shadow:
+    0 5px 0 oklch(0.62 0.14 var(--hue)),
+    inset 3px 3px 5px oklch(1 0 0 / 0.55),
+    inset -3px -4px 6px oklch(0.45 0.12 var(--hue) / 0.2);
+  transition: transform 100ms ease;
+}
+
+.btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 oklch(0.62 0.14 var(--hue)),
+    inset 3px 3px 6px oklch(0.45 0.12 var(--hue) / 0.25);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.btnGreen {
+  --hue: 145;
+}
+
+.btnRed {
+  --hue: 25;
+}
+
+.btnPlain {
+  --hue: 80;
+  background: oklch(0.96 0.03 80);
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: oklch(0.95 0.03 78);
+  box-shadow:
+    0 3px 0 oklch(0.8 0.05 70),
+    inset 2px 2px 3px oklch(1 0 0 / 0.8);
+}
+
+.chip[aria-pressed="true"] {
+  background: oklch(0.83 0.13 45);
+  color: oklch(0.28 0.08 45);
+  box-shadow:
+    0 3px 0 oklch(0.62 0.14 45),
+    inset 2px 2px 3px oklch(1 0 0 / 0.5);
+}
+
+.field {
+  height: 3rem;
+  width: 100%;
+  border-radius: 1.1rem;
+  padding: 0 1rem;
+  font-size: 1rem;
+  background: oklch(0.99 0.01 80);
+  box-shadow:
+    inset 3px 4px 7px oklch(0.55 0.06 60 / 0.18),
+    inset -2px -2px 5px oklch(1 0 0 / 0.9);
+  outline: none;
+}
+
+.field:focus-visible {
+  box-shadow:
+    inset 3px 4px 7px oklch(0.55 0.06 60 / 0.18),
+    0 0 0 3px oklch(0.8 0.12 50);
+}
+
+.sheet {
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif;
+  background: oklch(0.975 0.02 80);
+  color: oklch(0.3 0.05 50);
+  box-shadow: 0 -10px 30px oklch(0.4 0.05 60 / 0.25);
+}
+
+.ghost {
+  border-radius: 1.4rem;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  background: oklch(0.88 0.1 45);
+  color: oklch(0.3 0.08 45);
+  box-shadow: 0 10px 24px oklch(0.4 0.08 45 / 0.35);
+  transform: rotate(-3deg);
+}
+
+/* ---------- Dark mode: same shapes, darker clay ---------- */
+:global(.dark) .page {
+  background: oklch(0.22 0.02 60);
+  color: oklch(0.92 0.02 80);
+}
+
+:global(.dark) .day,
+:global(.dark) .empty,
+:global(.dark) .chip,
+:global(.dark) .field,
+:global(.dark) .sheet {
+  background: oklch(0.28 0.025 60);
+  color: oklch(0.92 0.02 80);
+  box-shadow:
+    6px 8px 16px oklch(0 0 0 / 0.35),
+    inset 2px 2px 3px oklch(1 0 0 / 0.06);
+}
+
+:global(.dark) .meal {
+  background: oklch(0.45 0.09 var(--hue));
+  color: oklch(0.96 0.02 var(--hue));
+  box-shadow:
+    0 6px 0 oklch(0.32 0.08 var(--hue)),
+    inset 3px 3px 5px oklch(1 0 0 / 0.15);
+}
+
+:global(.dark) .proposed {
+  background: oklch(0.36 0.06 var(--hue));
+}

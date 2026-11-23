@@ -33,9 +33,12 @@ export function mealTitle(meal: MealView): string {
   return meal.dishName ?? "Plat";
 }
 
-/** Stable soft colour per dish (the same dish looks the same everywhere). */
+/** Food-like clay colours: tomato, carrot, butter, pea, mint, blueberry, plum, beetroot. */
+const FOOD_HUES = [30, 55, 92, 135, 170, 250, 305, 350] as const;
+
+/** Stable colour per dish (the same dish looks the same everywhere). */
 export function dishHue(dishId: string): number {
   let hash = 0;
-  for (const char of dishId) hash = (hash * 31 + char.charCodeAt(0)) % 360;
-  return hash;
+  for (const char of dishId) hash = (hash * 31 + char.charCodeAt(0)) % 9973;
+  return FOOD_HUES[hash % FOOD_HUES.length] ?? 55;
 }
