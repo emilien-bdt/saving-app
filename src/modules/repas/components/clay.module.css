@@ -254,33 +254,3 @@
   box-shadow: 0 10px 24px oklch(0.4 0.08 45 / 0.35);
   transform: rotate(-3deg);
 }
-
-/* ---------- Dark mode: same shapes, darker clay ---------- */
-:global(.dark) .page {
-  background: oklch(0.22 0.02 60);
-  color: oklch(0.92 0.02 80);
-}
-
-:global(.dark) .day,
-:global(.dark) .empty,
-:global(.dark) .chip,
-:global(.dark) .field,
-:global(.dark) .sheet {
-  background: oklch(0.28 0.025 60);
-  color: oklch(0.92 0.02 80);
-  box-shadow:
-    6px 8px 16px oklch(0 0 0 / 0.35),
-    inset 2px 2px 3px oklch(1 0 0 / 0.06);
-}
-
-:global(.dark) .meal {
-  background: oklch(0.45 0.09 var(--hue));
-  color: oklch(0.96 0.02 var(--hue));
-  box-shadow:
-    0 6px 0 oklch(0.32 0.08 var(--hue)),
-    inset 3px 3px 5px oklch(1 0 0 / 0.15);
-}
-
-:global(.dark) .proposed {
-  background: oklch(0.36 0.06 var(--hue));
-}
