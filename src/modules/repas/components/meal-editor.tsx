@@ -7,7 +7,7 @@ import { clearMeal, saveMeal } from "../actions/meals";
 import type { MealKind } from "../domain/grid";
 import type { MealSlot } from "../domain/week";
 import type { DishOption, MealView } from "../view-models";
-import clay from "./clay.module.css";
+import { clay } from "./clay";
 import { longDayLabel, SLOT_LABELS } from "./labels";
 
 const inputClass = `${clay.field} aria-invalid:ring-2 aria-invalid:ring-red-400`;

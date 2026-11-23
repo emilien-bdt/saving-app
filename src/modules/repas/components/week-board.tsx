@@ -21,7 +21,7 @@ import { type CSSProperties, type PointerEvent as ReactPointerEvent, useOptimist
 import { clearMeal, generateWeek, moveMeal, setMealValidated, setWeekValidated } from "../actions/meals";
 import type { MealSlot } from "../domain/week";
 import type { DishOption, MealView } from "../view-models";
-import clay from "./clay.module.css";
+import { clay } from "./clay";
 import { dishHue, mealTitle, SLOT_LABELS } from "./labels";
 import { MealEditor } from "./meal-editor";
 

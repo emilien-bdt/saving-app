@@ -1,10 +1,12 @@
 /*
+ * Global stylesheet (CSS modules are not hashed with @tailwindcss/turbopack here),
+ * every class prefixed with "clay-".
  * "Pâte à modeler" look of the Repas module: soft pastel shapes, thick rounded
  * edges, a hard shadow underneath (like a piece of clay standing on the table)
  * and inner highlights. Each dish has its own hue (--hue), set inline.
  */
 
-.page {
+.clay-page {
   font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Varela Round", system-ui, sans-serif;
   background:
     radial-gradient(circle at 8% 0%, oklch(0.93 0.06 55 / 0.7) 0, transparent 32%),
@@ -16,7 +18,7 @@
 }
 
 /* ---------- Day card: a flat slab of beige clay ---------- */
-.day {
+.clay-day {
   border-radius: 2rem;
   padding: 0.85rem;
   background: oklch(0.955 0.03 78);
@@ -27,20 +29,20 @@
     inset -4px -5px 8px oklch(0.55 0.06 60 / 0.12);
 }
 
-.today {
+.clay-today {
   background: oklch(0.94 0.05 70);
   outline: 3px solid oklch(0.78 0.14 50);
   outline-offset: 4px;
 }
 
-.dayTitle {
+.clay-day-title {
   font-weight: 800;
   font-size: 1.05rem;
   letter-spacing: 0.01em;
 }
 
 /* ---------- Meals: coloured clay blobs ---------- */
-.meal {
+.clay-meal {
   --hue: 60;
   position: relative;
   border-radius: 1.6rem;
@@ -57,12 +59,12 @@
     box-shadow 160ms ease;
 }
 
-.meal:hover {
+.clay-meal:hover {
   transform: translateY(-2px) rotate(-0.4deg);
 }
 
 /* Proposed = fresh, still soft clay: paler, with a stitched outline. */
-.proposed {
+.clay-proposed {
   background: oklch(0.95 0.05 var(--hue));
   box-shadow:
     0 4px 0 oklch(0.84 0.07 var(--hue)),
@@ -72,7 +74,7 @@
   outline-offset: -7px;
 }
 
-.out {
+.clay-out {
   --hue: 250;
   background: oklch(0.93 0.012 250);
   color: oklch(0.45 0.03 250);
@@ -84,7 +86,7 @@
 }
 
 /* Empty slot: a dent pressed into the clay. */
-.empty {
+.clay-empty {
   border-radius: 1.6rem;
   background: oklch(0.93 0.025 78);
   box-shadow:
@@ -93,16 +95,16 @@
   color: oklch(0.55 0.05 60);
 }
 
-.over {
+.clay-over {
   outline: 3px solid oklch(0.72 0.16 45);
   outline-offset: 2px;
 }
 
-.dragging {
+.clay-dragging {
   opacity: 0.35;
 }
 
-.slotLabel {
+.clay-slot-label {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -113,14 +115,14 @@
   opacity: 0.75;
 }
 
-.mealTitle {
+.clay-meal-title {
   font-weight: 700;
   font-size: 1.05rem;
   line-height: 1.25;
 }
 
 /* ---------- Buttons: little clay pebbles that squash when pressed ---------- */
-.iconBtn {
+.clay-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -135,29 +137,29 @@
   transition: transform 100ms ease;
 }
 
-.iconBtn:hover {
+.clay-icon-btn:hover {
   background: oklch(1 0 0 / 0.8);
 }
 
-.iconBtn:active {
+.clay-icon-btn:active {
   transform: translateY(2px);
   box-shadow: inset 2px 2px 4px oklch(0.5 0.05 60 / 0.25);
 }
 
-.iconBtn:disabled {
+.clay-icon-btn:disabled {
   opacity: 0.5;
 }
 
-.danger {
+.clay-danger {
   color: oklch(0.52 0.19 27);
 }
 
-.locked {
+.clay-locked {
   background: oklch(0.86 0.12 150);
   color: oklch(0.35 0.1 150);
 }
 
-.btn {
+.clay-btn {
   --hue: 45;
   display: inline-flex;
   align-items: center;
@@ -175,32 +177,32 @@
   transition: transform 100ms ease;
 }
 
-.btn:active {
+.clay-btn:active {
   transform: translateY(4px);
   box-shadow:
     0 1px 0 oklch(0.62 0.14 var(--hue)),
     inset 3px 3px 6px oklch(0.45 0.12 var(--hue) / 0.25);
 }
 
-.btn:disabled {
+.clay-btn:disabled {
   opacity: 0.6;
   pointer-events: none;
 }
 
-.btnGreen {
+.clay-btn-green {
   --hue: 145;
 }
 
-.btnRed {
+.clay-btn-red {
   --hue: 25;
 }
 
-.btnPlain {
+.clay-btn-plain {
   --hue: 80;
   background: oklch(0.96 0.03 80);
 }
 
-.chip {
+.clay-chip {
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
   font-size: 0.95rem;
@@ -211,7 +213,7 @@
     inset 2px 2px 3px oklch(1 0 0 / 0.8);
 }
 
-.chip[aria-pressed="true"] {
+.clay-chip[aria-pressed="true"] {
   background: oklch(0.83 0.13 45);
   color: oklch(0.28 0.08 45);
   box-shadow:
@@ -219,7 +221,7 @@
     inset 2px 2px 3px oklch(1 0 0 / 0.5);
 }
 
-.field {
+.clay-field {
   height: 3rem;
   width: 100%;
   border-radius: 1.1rem;
@@ -232,20 +234,20 @@
   outline: none;
 }
 
-.field:focus-visible {
+.clay-field:focus-visible {
   box-shadow:
     inset 3px 4px 7px oklch(0.55 0.06 60 / 0.18),
     0 0 0 3px oklch(0.8 0.12 50);
 }
 
-.sheet {
+.clay-sheet {
   font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, sans-serif;
   background: oklch(0.975 0.02 80);
   color: oklch(0.3 0.05 50);
   box-shadow: 0 -10px 30px oklch(0.4 0.05 60 / 0.25);
 }
 
-.ghost {
+.clay-ghost {
   border-radius: 1.4rem;
   padding: 0.6rem 1rem;
   font-weight: 700;

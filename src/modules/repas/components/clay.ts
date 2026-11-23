@@ -1,0 +1,28 @@
+// "Pâte à modeler" look of the Repas module: class names of clay.css.
+import "./clay.css";
+
+export const clay = {
+  btn: "clay-btn",
+  btnGreen: "clay-btn-green",
+  btnPlain: "clay-btn-plain",
+  btnRed: "clay-btn-red",
+  chip: "clay-chip",
+  danger: "clay-danger",
+  day: "clay-day",
+  dayTitle: "clay-day-title",
+  dragging: "clay-dragging",
+  empty: "clay-empty",
+  field: "clay-field",
+  ghost: "clay-ghost",
+  iconBtn: "clay-icon-btn",
+  locked: "clay-locked",
+  meal: "clay-meal",
+  mealTitle: "clay-meal-title",
+  out: "clay-out",
+  over: "clay-over",
+  page: "clay-page",
+  proposed: "clay-proposed",
+  sheet: "clay-sheet",
+  slotLabel: "clay-slot-label",
+  today: "clay-today",
+} as const;

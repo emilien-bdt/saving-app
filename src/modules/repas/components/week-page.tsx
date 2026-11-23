@@ -3,7 +3,7 @@ import { todayIso } from "@/shared/lib/today";
 import { getDishOptions } from "../data/dishes";
 import { getWeekMeals, toView } from "../data/meals";
 import { addDays, formatWeekParam, mondayOf, parseIsoDate, parseWeekParam, toIsoDate, weekDays } from "../domain/week";
-import clay from "./clay.module.css";
+import { clay } from "./clay";
 import { dayLabel, weekTitle } from "./labels";
 import { type DayView, WeekBoard } from "./week-board";
 
