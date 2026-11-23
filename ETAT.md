@@ -1,13 +1,13 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 12).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 14).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
 
 | | |
 |---|---|
-| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do** (Repas : pas commencé) |
+| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille + génération ; courses à venir) |
 | Environnement | Local (`npm run dev`, Postgres Docker) ; déploiement prêt pour https://save.emilienbourdet.fr (serveur perso, Docker + nginx) — **mise en ligne à faire** (`deploy/README.md`) |
 | Git | branche `main`, commits non poussés (`git push` à faire) |
 | Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
@@ -68,19 +68,30 @@
 - **Listes** (`/todo/listes`) : ajouter, renommer, couleur, ordre ↑↓, supprimer (les tâches restent, sans liste).
 - ⚠️ Rendu pas encore validé à l'écran.
 
+### Repas — `/repas`
+- Grille de la semaine (lundi → dimanche, midi et soir), navigation par semaine (`?semaine=AAAA-Wss`).
+- Case : plat, reste (↺, pré-rempli avec le repas précédent) ou absent / dehors ; note facultative.
+- **Générer / Regénérer** : remplit les cases vides ou proposées depuis l'historique ; ↻ sur une case pour un autre plat ; cadenas = validé, jamais touché ; « Tout valider ».
+- Glisser-déposer par la poignée ⋮⋮ (déplacer ou échanger), aussi sur iPhone.
+- « + Repas » partout (date + créneau au choix).
+- Widget Accueil : midi, soir, demain soir, repas prévus / validés de la semaine.
+- Import des menus Excel : `npm run import:repas -- --dry-run …/repas-*.xlsx` (18 fichiers → 202 repas, 78 plats).
+- ⚠️ Rendu pas encore validé à l'écran.
+
 ### Import Excel
 - `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …`
 - Rapport avec contrôle des soldes mois par mois ; ré-import sans doublon.
 
 ## Ce qui reste à faire (dans l'ordre)
 
-0. **Valider à l'écran** l'Accueil et To do (`npm run db:migrate` d'abord).
+0. **Valider à l'écran** l'Accueil, To do et Repas (`npm run db:migrate`, puis `npm run import:repas`).
+0 bis. **Repas — courses** (étape 16) : ingrédients par plat (quantités pour 2), liste de la semaine par rayon, cochable, liens Courses U ; écran Plats (renommer, fusionner les doublons, archiver).
 1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
 4. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
 5. **Mise en ligne** sur le serveur (fichiers prêts, voir `deploy/README.md`) : DNS, `.env`, restauration de la base locale, certificat.
-6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), To do : tâches récurrentes / sous-tâches, module **Repas**.
+6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), To do : tâches récurrentes / sous-tâches, Repas : option Gemini (gratuit).
 
 ## Limites connues
 
@@ -116,3 +127,5 @@ Puis http://localhost:3000 — Accueil (ou http://192.168.1.28:3000 depuis l'iPh
 | 10 | `010fccf` | Accueil (menu des apps + tableau de bord), navigation commune entre apps |
 | 11 | `d2ff47a` | Module To do : tâches, échéances, priorité, listes |
 | 12 | `401405e` | Widgets de l'Accueil : Finances et To do |
+| 13 | `9812cd0` | Module Repas : grille de la semaine, validation, glisser-déposer, génération maison |
+| 14 | `ba46a7d` | Import des menus Excel (`npm run import:repas`) |

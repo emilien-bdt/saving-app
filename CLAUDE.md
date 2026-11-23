@@ -9,7 +9,7 @@ Elle doit être **plus simple et plus rapide qu'Excel** : saisir une dépense do
 Modules prévus (par ordre de priorité) :
 1. **Finances** (MVP) : comptes, transactions, catégories, budgets mensuels, tableau de bord
 2. **To do** : tâches, échéances, priorité, listes (en place depuis le 23/11/2026)
-3. **Repas** : planning de la semaine, recettes, liste de courses
+3. **Repas** : planning de la semaine (en place depuis le 23/11/2026), liste de courses
 4. *(plus tard)* : [à compléter : santé, abonnements, objectifs…]
 
 L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fait d'un widget par module.
@@ -68,6 +68,7 @@ L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fai
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration puis régénérer le client (Prisma 7 ne le fait plus seul) ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
 - `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …` : import des fichiers Excel (rapport + contrôle des soldes mois par mois)
+- `npm run import:repas -- [--dry-run] [--replace] repas-20-10-25.xlsx …` : import des menus Excel (semaine lue dans le nom du fichier)
 - `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour le `.env` du serveur
 
 ## Décisions
@@ -97,3 +98,8 @@ L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fai
 - 23/11/2026 — Accueil `/` = menu des apps + tableau de bord (un widget par module, rien de spécifique à un module dans l'Accueil) ; plus de redirection vers Finances ; la PWA s'ouvre sur `/`. Pas de « + » sur l'Accueil (chaque module a le sien).
 - 23/11/2026 — Module **To do** (`/todo`, tables `todo_*`) : tâche = titre, note facultative, échéance facultative (`@db.Date`), priorité normale / haute, liste facultative, `completedAt` (null = à faire) ; listes = nom unique (insensible à la casse), couleur, ordre ; supprimer une liste garde ses tâches (sans liste). Page groupée En retard / Aujourd'hui / Demain / Cette semaine (≤ 7 j) / Plus tard / Sans date ; tri : prioritaire, puis échéance, puis ancienneté. Nouvelle tâche = aujourd'hui, sans liste ; « Ajouter et continuer » par défaut. Pas de sous-tâches ni de récurrence pour l'instant.
 - 23/11/2026 — Widgets : Finances = total, tendance, dépenses du mois en cours (réel + prévu) ; To do = tâches en retard + du jour, cochables depuis l'Accueil, et nombre à venir sous 7 jours.
+- 23/11/2026 — Module **Repas** (`/repas?semaine=AAAA-Wss`, tables `repas_*`) : grille lundi → dimanche × midi / soir, un plat par case, 2 personnes. Repas = plat (DISH), reste d'un plat (LEFTOVER, pointe le plat cuisiné) ou absent / dehors (OUT, libellé libre) ; statut proposé / validé (cadenas). Saisie manuelle = validée par défaut ; génération = proposée. Glisser-déposer par poignée (pointer events maison, `touch-action: none`) : case vide = déplacement, case pleine = échange. Plats = catalogue unique par nom normalisé (`domain/dish-key.ts`).
+- 23/11/2026 — Génération **sans IA externe** (gratuit, données sur le serveur) : `domain/generator.ts`, poids = fréquence saisonnière (cosinus de l'écart en mois) × récence (jours / 28, plafonné) × variété (× 0,4 par plat de la semaine au même mot principal) ; un midi après un plat cuisiné le soir devient son reste avec la probabilité observée ; ne remplit que les cases vides ou proposées, jamais les validées ; régénération d'une seule case possible. Option future : Gemini (offre gratuite, données utilisables par Google).
+- 23/11/2026 — Import menus Excel (`import/excel/parse-menu.ts`, lecteur xlsx de Finances) : `x` = absent, `?` ignoré, sorties (Noël, restaurant, chez …) = OUT, « reste » / « reste gratin » résolu vers le plat d'origine, midi identique au soir de la veille = reste, « (zoë) » → note ; fichier plus récent prioritaire ; repas importés validés ; fichiers réels jamais commités.
+- 23/11/2026 — Courses : liste sur le site (cochable, modifiable) + liens de recherche Courses U ; pas d'API Courses U (pas de remplissage automatique du panier).
+
