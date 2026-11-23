@@ -1,0 +1,39 @@
+// Module To do. Due dates are calendar dates (@db.Date, UTC-midnight Date objects).
+// CHECK constraints (non-empty title/name, colour format) live in the migration SQL.
+
+enum TodoPriority {
+  NORMAL
+  HIGH
+}
+
+model TodoList {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String     @default("#64748b")
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tasks     TodoTask[]
+
+  @@map("todo_list")
+}
+
+model TodoTask {
+  id          String       @id @default(cuid())
+  title       String
+  note        String?
+  /// Optional due date; null = "Sans date".
+  dueDate     DateTime?    @db.Date
+  priority    TodoPriority @default(NORMAL)
+  /// Deleting a list keeps its tasks (they go back to "Sans liste").
+  listId      String?
+  list        TodoList?    @relation(fields: [listId], references: [id], onDelete: SetNull)
+  /// null = to do; set = done (date and time it was ticked).
+  completedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([completedAt, dueDate])
+  @@index([listId])
+  @@map("todo_task")
+}
