@@ -1,7 +1,8 @@
 // Module Repas. Dates are calendar dates (@db.Date, UTC-midnight Date objects).
 // CHECK constraints live in the migration SQL:
 // - DISH / LEFTOVER ⇒ dishId NOT NULL ; OUT ⇒ dishId NULL AND label NOT NULL ;
-// - non-empty dish name / key; label and note lengths.
+// - non-empty dish name / key; label and note lengths;
+// - ingredient name length, positive amounts and pack sizes.
 
 enum RepasSlot {
   LUNCH
@@ -33,7 +34,8 @@ model RepasDish {
   archived  Boolean     @default(false)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-  meals     RepasMeal[]
+  meals       RepasMeal[]
+  ingredients RepasDishIngredient[]
 
   @@map("repas_dish")
 }
@@ -56,4 +58,61 @@ model RepasMeal {
   @@unique([date, slot])
   @@index([dishId])
   @@map("repas_meal")
+}
+
+/// Aisles in the order of the Courses U drive (shopping list order).
+enum RepasAisle {
+  FRUITS_LEGUMES
+  BOUCHERIE_POISSON
+  CHARCUTERIE_TRAITEUR
+  CREMERIE
+  EPICERIE_SALEE
+  EPICERIE_SUCREE
+  SURGELES
+  BOULANGERIE
+  BOISSONS
+  HYGIENE_ENTRETIEN
+  AUTRE
+}
+
+enum RepasUnit {
+  PIECE
+  G
+  ML
+}
+
+/// Shared ingredient catalogue: the same ingredient adds up across dishes.
+model RepasIngredient {
+  id         String                @id @default(cuid())
+  name       String
+  /// Normalised name (domain/ingredients.ts ingredientKey): "Œufs" = "oeuf".
+  key        String                @unique
+  aisle      RepasAisle            @default(AUTRE)
+  /// Unit of every amount of this ingredient.
+  unit       RepasUnit             @default(PIECE)
+  /// Size of what is bought (200 for a 200 g pack); null = sold by the unit.
+  packAmount Int?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  dishes     RepasDishIngredient[]
+
+  @@map("repas_ingredient")
+}
+
+/// Ingredient of a dish, for one meal for 2 people.
+model RepasDishIngredient {
+  id           String          @id @default(cuid())
+  dishId       String
+  dish         RepasDish       @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   RepasIngredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  /// In the ingredient's unit; null = quantity not known yet.
+  amount       Int?
+  /// Guessed from the Excel history, not reviewed yet.
+  suggested    Boolean         @default(false)
+  sortOrder    Int             @default(0)
+
+  @@unique([dishId, ingredientId])
+  @@index([ingredientId])
+  @@map("repas_dish_ingredient")
 }

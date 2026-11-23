@@ -9,6 +9,7 @@ import "dotenv/config";
 import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { readWorkbook } from "../src/modules/finances/import/excel/xlsx";
+import { suggestDishIngredients } from "../src/modules/repas/domain/ingredient-suggestions";
 import { toIsoDate } from "../src/modules/repas/domain/week";
 import {
   buildDishCatalogue,
@@ -98,11 +99,17 @@ async function main(): Promise<number> {
   }
 
   const { db } = await import("../src/shared/lib/db");
-  const { applyMenuImport, deleteMenuImports } = await import("../src/modules/repas/data/import-repository");
+  const { applyIngredientSuggestions, applyMenuImport, deleteMenuImports } = await import("../src/modules/repas/data/import-repository");
   try {
     if (flags.has("--replace")) console.log(`\n--replace : ${await deleteMenuImports()} repas importés supprimés.`);
     const result = await applyMenuImport(meals, catalogue);
     console.log(`\nImport terminé : ${result.dishes} plats, ${result.created} repas créés, ${result.skipped} cases déjà remplies conservées.`);
+    const suggestions = suggestDishIngredients(
+      meals.map((meal) => ({ date: meal.date, slot: meal.slot, kind: meal.kind, dishName: meal.kind === "OUT" ? null : meal.dishName })),
+      files.flatMap((file) => file.shopping),
+    );
+    const filled = await applyIngredientSuggestions(suggestions);
+    console.log(`Ingrédients suggérés (à valider dans Repas › Plats) : ${filled} plats pré-remplis.`);
     return 0;
   } finally {
     await db.$disconnect();

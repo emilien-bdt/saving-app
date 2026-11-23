@@ -109,7 +109,7 @@ export function classifyMealCell(raw: string): Classified {
   if (key === "x") return { kind: "OUT", label: "Absent", note };
 
   if (key.startsWith("reste")) {
-    let hint = key.replace(/^reste\b/, "").replace(/^\s*\|?\s*/, "");
+    let hint = key.replace(/^reste\b/, "").replace(/^[\s|:\-–]+/, "");
     if (ZOE.test(hint)) {
       note = "Zoë";
       hint = hint.replace(ZOE, "");
@@ -117,7 +117,7 @@ export function classifyMealCell(raw: string): Classified {
     hint = hint
       .replace(/\(.*?\)/g, "")
       .replace(/^(de la veille|de|du|des)\b/, "")
-      .replace(/^[\s|]+/, "")
+      .replace(/^[\s|:\-–]+/, "")
       .trim();
     return { kind: "LEFTOVER", hint: hint === "" ? null : hint, note };
   }

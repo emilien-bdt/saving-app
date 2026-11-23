@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+import { BookOpen, CalendarDays } from "lucide-react";
 import { useState } from "react";
 import type { NavApp } from "@/modules/types";
 import { todayIso } from "@/shared/lib/today";
@@ -8,7 +8,10 @@ import { ModuleNav, type ModuleNavLink } from "@/shared/navigation/module-nav";
 import type { DishOption } from "../view-models";
 import { MealEditor } from "./meal-editor";
 
-const LINKS: ModuleNavLink[] = [{ href: "/repas", label: "Semaine", icon: CalendarDays, exact: true }];
+const LINKS: ModuleNavLink[] = [
+  { href: "/repas", label: "Semaine", icon: CalendarDays, exact: true },
+  { href: "/repas/plats", label: "Plats", icon: BookOpen },
+];
 
 /** Common module navigation + "+ Repas" (any day, any slot) on every page. */
 export function RepasNav({ apps, dishes }: { apps: readonly NavApp[]; dishes: readonly DishOption[] }) {
