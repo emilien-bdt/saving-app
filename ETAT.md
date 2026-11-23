@@ -1,17 +1,17 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 14).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 16).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
 
 | | |
 |---|---|
-| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille + génération ; courses à venir) |
+| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille, génération, plats et ingrédients ; liste de courses à venir) |
 | Environnement | Local (`npm run dev`, Postgres Docker) ; déploiement prêt pour https://save.emilienbourdet.fr (serveur perso, Docker + nginx) — **mise en ligne à faire** (`deploy/README.md`) |
 | Git | branche `main`, commits non poussés (`git push` à faire) |
 | Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
-| Tests | 220 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
+| Tests | 247 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
 
@@ -75,7 +75,9 @@
 - Glisser-déposer par la poignée ⋮⋮ (déplacer ou échanger), aussi sur iPhone.
 - « + Repas » partout (date + créneau au choix).
 - Widget Accueil : midi, soir, demain soir, repas prévus / validés de la semaine.
-- Import des menus Excel : `npm run import:repas -- --dry-run …/repas-*.xlsx` (18 fichiers → 202 repas, 78 plats).
+- Style « pâte à modeler » (feuille `components/clay.css`, classes `clay-*`), cases agrandies, bouton 🗑 sur chaque repas.
+- **Plats** (`/repas/plats`) : recherche, filtres (à compléter, doublons probables, archivés), fusion en un geste, éditeur (nom, ingrédients pour un repas à 2 avec quantité / unité / rayon du drive, archiver, fusionner, supprimer si jamais mangé). Ingrédients pré-remplis d'après les courses des Excel (« suggéré » à valider).
+- Import des menus Excel : `npm run import:repas -- --replace ~/Documents/Ressources/Autres/Repas/*.xlsx` (48 fichiers → 47 semaines, 524 repas, 190 plats, 126 plats avec ingrédients suggérés) ; formats `repas-JJ-MM-AA` et `planning-menu-JJ-MM`.
 - ⚠️ Rendu pas encore validé à l'écran.
 
 ### Import Excel
@@ -85,7 +87,8 @@
 ## Ce qui reste à faire (dans l'ordre)
 
 0. **Valider à l'écran** l'Accueil, To do et Repas (`npm run db:migrate`, puis `npm run import:repas`).
-0 bis. **Repas — courses** (étape 16) : ingrédients par plat (quantités pour 2), liste de la semaine par rayon, cochable, liens Courses U ; écran Plats (renommer, fusionner les doublons, archiver).
+0 bis. **Repas — liste de courses** (étape 17) : calculée depuis les repas (1 repas + 1 par reste prévu, quantités additionnées, arrondi au conditionnement), basiques ajoutés d'un geste (liste dans Repas › Paramètres), ajout manuel, cochable, rangée par rayon du drive ; fusions de plats mémorisées pour les réimports.
+0 ter. **Repas — export** (étape 18) : liens Courses U par article, copier / partager, widget Accueil.
 1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
@@ -129,3 +132,6 @@ Puis http://localhost:3000 — Accueil (ou http://192.168.1.28:3000 depuis l'iPh
 | 12 | `401405e` | Widgets de l'Accueil : Finances et To do |
 | 13 | `9812cd0` | Module Repas : grille de la semaine, validation, glisser-déposer, génération maison |
 | 14 | `ba46a7d` | Import des menus Excel (`npm run import:repas`) |
+| — | `9f5b2ef` | Import repas : format planning-menu, jour sur un chiffre, « (reste) » |
+| 15 | `df9c2e7` | Repas : style pâte à modeler, affichage agrandi, bouton supprimer (+ `e0cb601` feuille globale `clay-`) |
+| 16 | `777df49` | Plats et ingrédients : catalogue (rayon, unité, conditionnement), fusion des doublons, suggestions Excel |

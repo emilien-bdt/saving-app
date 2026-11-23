@@ -68,7 +68,7 @@ L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fai
 - `npm test` (`test:watch`), `npm run typecheck`, `npm run lint`, `npm run build`
 - `npm run db:migrate` : créer/appliquer une migration puis régénérer le client (Prisma 7 ne le fait plus seul) ; `db:generate` : régénérer le client ; `db:studio` ; `db:seed` : données de départ (idempotent)
 - `npm run import:excel -- [--dry-run] [--replace] Budget-2024.xlsm …` : import des fichiers Excel (rapport + contrôle des soldes mois par mois)
-- `npm run import:repas -- [--dry-run] [--replace] repas-20-10-25.xlsx …` : import des menus Excel (semaine lue dans le nom du fichier)
+- `npm run import:repas -- [--dry-run] [--replace] ~/Documents/Ressources/Autres/Repas/*.xlsx` : import des menus Excel (`repas-JJ-MM-AA` et `planning-menu-JJ-MM`, semaine lue dans le nom du fichier) + ingrédients suggérés
 - `npm run auth:hash` : choisit le mot de passe ; écrit `AUTH_PASSWORD_HASH` + `AUTH_SECRET` dans `.env` et les affiche pour le `.env` du serveur
 
 ## Décisions
@@ -102,4 +102,7 @@ L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fai
 - 23/11/2026 — Génération **sans IA externe** (gratuit, données sur le serveur) : `domain/generator.ts`, poids = fréquence saisonnière (cosinus de l'écart en mois) × récence (jours / 28, plafonné) × variété (× 0,4 par plat de la semaine au même mot principal) ; un midi après un plat cuisiné le soir devient son reste avec la probabilité observée ; ne remplit que les cases vides ou proposées, jamais les validées ; régénération d'une seule case possible. Option future : Gemini (offre gratuite, données utilisables par Google).
 - 23/11/2026 — Import menus Excel (`import/excel/parse-menu.ts`, lecteur xlsx de Finances) : `x` = absent, `?` ignoré, sorties (Noël, restaurant, chez …) = OUT, « reste » / « reste gratin » résolu vers le plat d'origine, midi identique au soir de la veille = reste, « (zoë) » → note ; fichier plus récent prioritaire ; repas importés validés ; fichiers réels jamais commités.
 - 23/11/2026 — Courses : liste sur le site (cochable, modifiable) + liens de recherche Courses U ; pas d'API Courses U (pas de remplissage automatique du panier).
+- 23/11/2026 — Style du module Repas « pâte à modeler » (cuisine, nourriture) : feuille globale `components/clay.css`, classes préfixées `clay-` (les modules CSS ne sont pas hachés avec `@tailwindcss/turbopack`, et `:global()` y est refusé) ; couleur par plat parmi des tons alimentaires ; pas de mode sombre spécifique.
+- 23/11/2026 — Ingrédients : catalogue partagé `repas_ingredient` (nom normalisé unique, rayon dans l'ordre du drive Courses U, unité pièce / g / ml, conditionnement facultatif) ; `repas_dish_ingredient` = quantité **pour un repas à 2** (null = inconnue), `suggested` tant que non revue ; unité et rayon propres à l'ingrédient (communs à tous les plats) ; ingrédients devinés à l'import d'après les courses notées le jour où le plat a été cuisiné, seulement pour les plats sans ingrédients.
+- 23/11/2026 — Liste de courses (à venir) : mélange calculé (1 repas + 1 par reste prévu, quantités additionnées, arrondi au conditionnement en affichant les deux) + basiques (liste modifiable dans les paramètres, ajout d'un geste) + manuel ; quantités ; rangée par rayon du drive Courses U.
 
