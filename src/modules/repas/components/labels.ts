@@ -30,7 +30,12 @@ export function weekTitle(mondayIso: string, sundayIso: string): string {
 /** What a cell says: the dish, "Reste : …" or the absence label. */
 export function mealTitle(meal: MealView): string {
   if (meal.kind === "OUT") return meal.label ?? "Absent";
-  return meal.dishName ?? "Plat";
+  return meal.dishName ?? (meal.sides.map((side) => side.name).join(" + ") || "Repas");
+}
+
+/** "+ Chips · Salade" under the dish; empty when the meal is sides only (already in the title). */
+export function sidesLine(meal: MealView): string {
+  return meal.kind !== "OUT" && meal.dishName && meal.sides.length > 0 ? `+ ${meal.sides.map((side) => side.name).join(" · ")}` : "";
 }
 
 /** Food-like clay colours: tomato, carrot, butter, pea, mint, blueberry, plum, beetroot. */

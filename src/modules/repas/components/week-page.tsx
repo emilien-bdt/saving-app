@@ -1,6 +1,6 @@
 import { requireSession } from "@/shared/auth/server";
 import { todayIso } from "@/shared/lib/today";
-import { getDishOptions } from "../data/dishes";
+import { getDishOptions, getSideOptions } from "../data/dishes";
 import { getWeekMeals, toView } from "../data/meals";
 import { addDays, formatWeekParam, mondayOf, parseIsoDate, parseWeekParam, toIsoDate, weekDays } from "../domain/week";
 import { clay } from "./clay";
@@ -17,7 +17,7 @@ export async function WeekPage({ searchParams }: Props) {
   const param = typeof params.semaine === "string" ? params.semaine : null;
   const monday = parseWeekParam(param) ?? mondayOf(parseIsoDate(today) ?? new Date());
 
-  const [rows, dishes] = await Promise.all([getWeekMeals(monday), getDishOptions()]);
+  const [rows, dishes, sides] = await Promise.all([getWeekMeals(monday), getDishOptions(), getSideOptions()]);
   const meals = rows.map(toView);
   const find = (dateIso: string, slot: "LUNCH" | "DINNER") => meals.find((meal) => meal.dateIso === dateIso && meal.slot === slot) ?? null;
 
@@ -37,6 +37,7 @@ export async function WeekPage({ searchParams }: Props) {
         days={days}
         dayBeforeDinner={find(toIsoDate(addDays(monday, -1)), "DINNER")}
         dishes={dishes}
+        sides={sides}
       />
     </main>
     </div>

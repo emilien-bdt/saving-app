@@ -28,7 +28,7 @@ export async function applyMenuImport(
           date: meal.date,
           slot: meal.slot,
           kind: meal.kind,
-          dishId: dishIds.get(dishKey(meal.dishName)) ?? null,
+          dishId: meal.dishName === null ? null : (dishIds.get(dishKey(meal.dishName)) ?? null),
           label: null,
           note: meal.note,
           status: "VALIDATED" as const,
@@ -36,7 +36,45 @@ export async function applyMenuImport(
         },
   );
   const { count } = await db.repasMeal.createMany({ data, skipDuplicates: true });
+
+  // Sides of the meals just created (a slot kept from before keeps its own sides).
+  const withSides = meals.filter((meal) => meal.kind !== "OUT" && meal.sides.length > 0);
+  if (withSides.length > 0) {
+    const created = await db.repasMeal.findMany({
+      where: { importRef: { in: withSides.map(importRefOf) }, sides: { none: {} } },
+      select: { id: true, importRef: true },
+    });
+    const mealIdByRef = new Map(created.map((row) => [row.importRef, row.id]));
+    const sideIds = new Map<string, string>();
+    const rows: { mealId: string; ingredientId: string; sortOrder: number }[] = [];
+    for (const meal of withSides) {
+      const mealId = mealIdByRef.get(importRefOf(meal));
+      if (!mealId || meal.kind === "OUT") continue;
+      for (const [sortOrder, name] of meal.sides.entries()) {
+        const key = ingredientKey(name);
+        let ingredientId = sideIds.get(key);
+        if (!ingredientId) {
+          const ingredient = await db.repasIngredient.upsert({
+            where: { key },
+            create: { key, name, aisle: guessAisle(name), side: true },
+            update: {},
+            select: { id: true },
+          });
+          ingredientId = ingredient.id;
+          sideIds.set(key, ingredientId);
+        }
+        rows.push({ mealId, ingredientId, sortOrder });
+      }
+    }
+    await db.repasMealSide.createMany({ data: rows, skipDuplicates: true });
+  }
   return { dishes: catalogue.size, created: count, skipped: data.length - count };
+}
+
+/** Normalised names of the side list (to split "dish + sides" at import). */
+export async function getSideKeys(): Promise<Set<string>> {
+  const rows = await db.repasIngredient.findMany({ where: { side: true }, select: { key: true } });
+  return new Set(rows.map((row) => row.key));
 }
 
 /** Removes the imported meals (manual ones stay) and the dishes left unused. */

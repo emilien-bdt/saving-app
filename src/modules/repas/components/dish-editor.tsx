@@ -1,9 +1,9 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { Archive, ArchiveRestore, Combine, Plus, Trash2, X } from "lucide-react";
+import { Archive, ArchiveRestore, Combine, Plus, Salad, Trash2, X } from "lucide-react";
 import { useState, useTransition } from "react";
-import { deleteDish, type DishInput, mergeDish, saveDish } from "../actions/dishes";
+import { convertDishToSide, deleteDish, type DishInput, mergeDish, saveDish } from "../actions/dishes";
 import { type Aisle, AISLES, guessAisle, ingredientKey, type Unit, UNITS } from "../domain/ingredients";
 import type { DishItem, IngredientOption } from "../view-models";
 import { clay } from "./clay";
@@ -217,6 +217,19 @@ export function DishEditor({ dish, dishes, ingredients, onClose }: Props) {
                 <button type="button" onClick={() => setArchived(!archived)} aria-pressed={archived} className={`${clay.btn} ${clay.btnPlain} text-sm`}>
                   {archived ? <ArchiveRestore className="size-4" aria-hidden /> : <Archive className="size-4" aria-hidden />}
                   {archived ? "Archivé (jamais proposé)" : "Archiver"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    if (window.confirm(`« ${dish.name} » n'est pas un plat ?\nIl devient un accompagnement de ses ${dish.meals} repas et disparaît des plats.`)) {
+                      finish(() => convertDishToSide(dish.id));
+                    }
+                  }}
+                  className={`${clay.btn} ${clay.btnPlain} text-sm`}
+                >
+                  <Salad className="size-4" aria-hidden />
+                  Ce n&apos;est pas un plat
                 </button>
                 {dish.meals === 0 ? (
                   <button type="button" disabled={pending} onClick={() => finish(() => deleteDish(dish.id))} className={`${clay.btn} ${clay.btnRed} text-sm`}>

@@ -15,8 +15,8 @@ const dishes: CandidateDish[] = [
   { id: "salade", name: "Salade composée" },
 ];
 
-function meal(date: Date, slot: HistoryMeal["slot"], kind: HistoryMeal["kind"], dishId: string | null): HistoryMeal {
-  return { date, slot, kind, dishId };
+function meal(date: Date, slot: HistoryMeal["slot"], kind: HistoryMeal["kind"], dishId: string | null, sides: string[] = []): HistoryMeal {
+  return { date, slot, kind, dishId, sides };
 }
 
 describe("generator", () => {
@@ -39,7 +39,7 @@ describe("generator", () => {
 
   it("fills only the requested slots, without repeating a dish in the week", () => {
     const fixed: MealCell[] = [
-      { date: monday, slot: "DINNER", kind: "DISH", dishId: "quiche", label: null, note: null, status: "VALIDATED" },
+      { date: monday, slot: "DINNER", kind: "DISH", dishId: "quiche", sides: [], label: null, note: null, status: "VALIDATED" },
     ];
     const slots = weekSlots(monday).filter((s) => slotKey(s) !== slotKey(fixed[0] as MealCell));
     const proposals = generateMenu({ monday, slots, fixed, history: [], dishes, seed: 7, leftoverRate: 0 });
@@ -51,7 +51,7 @@ describe("generator", () => {
 
   it("turns the lunch after a cooked dinner into its leftover", () => {
     const fixed: MealCell[] = [
-      { date: monday, slot: "DINNER", kind: "DISH", dishId: "gratin", label: null, note: null, status: "VALIDATED" },
+      { date: monday, slot: "DINNER", kind: "DISH", dishId: "gratin", sides: [], label: null, note: null, status: "VALIDATED" },
     ];
     const tuesday = addDays(monday, 1);
     const proposals = generateMenu({
@@ -82,4 +82,21 @@ describe("generator", () => {
     expect(counts.get("raclette") ?? 0).toBeGreaterThan(counts.get("salade") ?? 0);
     expect(counts.get("raclette") ?? 0).toBeGreaterThan(counts.get("riz") ?? 0);
   });
+
+  it("proposes a dish with its usual sides", () => {
+    const history = [
+      meal(utcDate(2026, 1, 5), "DINNER", "DISH", "raclette", ["salade"]),
+      meal(utcDate(2026, 1, 12), "DINNER", "DISH", "raclette", ["salade", "pain"]),
+    ];
+    const [proposal] = generateMenu({
+      monday,
+      slots: [{ date: monday, slot: "DINNER" }],
+      fixed: [],
+      history,
+      dishes: [{ id: "raclette", name: "Raclette" }],
+      seed: 3,
+    });
+    expect(proposal).toMatchObject({ kind: "DISH", dishId: "raclette", sides: ["salade", "pain"] });
+  });
 });
+

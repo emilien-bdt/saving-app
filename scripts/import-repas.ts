@@ -10,6 +10,7 @@ import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { readWorkbook } from "../src/modules/finances/import/excel/xlsx";
 import { suggestDishIngredients } from "../src/modules/repas/domain/ingredient-suggestions";
+import { DEFAULT_SIDE_KEYS } from "../src/modules/repas/domain/sides";
 import { toIsoDate } from "../src/modules/repas/domain/week";
 import {
   buildDishCatalogue,
@@ -79,7 +80,11 @@ async function main(): Promise<number> {
   const parsed = paths.map(parseFile);
   const files = parsed.filter((file) => file.meals.length > 0);
   const skipped = parsed.filter((file) => file.meals.length === 0);
-  const { meals, warnings } = mergeAndResolve(files);
+  // Side list from the database (Repas › Paramètres), the default one for a dry run.
+  const dryRun = flags.has("--dry-run");
+  const repository = dryRun ? null : await import("../src/modules/repas/data/import-repository");
+  const savedSides = repository ? await repository.getSideKeys() : new Set<string>();
+  const { meals, warnings } = mergeAndResolve(files, savedSides.size > 0 ? savedSides : DEFAULT_SIDE_KEYS);
   const catalogue = buildDishCatalogue(meals);
   const count = (kind: string) => meals.filter((meal) => meal.kind === kind).length;
 
@@ -87,19 +92,22 @@ async function main(): Promise<number> {
   for (const file of [...files].sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())) {
     console.log(`  • semaine du ${toIsoDate(file.weekStart)} : ${file.meals.length} repas, ${file.shopping.length} lignes de courses`);
   }
-  console.log(`\n${meals.length} repas : ${count("DISH")} plats cuisinés, ${count("LEFTOVER")} restes, ${count("OUT")} absences / sorties`);
+  const sidesOnly = meals.filter((meal) => meal.kind === "DISH" && meal.dishName === null).length;
+  console.log(
+    `\n${meals.length} repas : ${count("DISH")} cuisinés (dont ${sidesOnly} sans plat, accompagnements seuls), ${count("LEFTOVER")} restes, ${count("OUT")} absences / sorties`,
+  );
   console.log(`${catalogue.size} plats distincts : ${[...catalogue.values()].sort((a, b) => a.localeCompare(b, "fr")).join(", ")}`);
   const allWarnings = [...parsed.flatMap((file) => file.warnings), ...warnings];
   if (skipped.length > 0) allWarnings.push(`${skipped.length} fichier(s) sans repas ignoré(s)`);
   if (allWarnings.length > 0) console.log(`\nAvertissements :\n${allWarnings.map((w) => `  ⚠ ${w}`).join("\n")}`);
 
-  if (flags.has("--dry-run")) {
+  if (!repository) {
     console.log("\n--dry-run : rien n'a été écrit en base.");
     return 0;
   }
 
   const { db } = await import("../src/shared/lib/db");
-  const { applyIngredientSuggestions, applyMenuImport, deleteMenuImports } = await import("../src/modules/repas/data/import-repository");
+  const { applyIngredientSuggestions, applyMenuImport, deleteMenuImports } = repository;
   try {
     if (flags.has("--replace")) console.log(`\n--replace : ${await deleteMenuImports()} repas importés supprimés.`);
     const result = await applyMenuImport(meals, catalogue);

@@ -6,7 +6,8 @@ import { useRef, useState, useTransition } from "react";
 import { clearMeal, saveMeal } from "../actions/meals";
 import type { MealKind } from "../domain/grid";
 import type { MealSlot } from "../domain/week";
-import type { DishOption, MealView } from "../view-models";
+import { ingredientKey } from "../domain/ingredients";
+import type { DishOption, MealView, SideOption } from "../view-models";
 import { clay } from "./clay";
 import { longDayLabel, SLOT_LABELS } from "./labels";
 
@@ -27,6 +28,8 @@ type Props = {
   pickSlot?: boolean;
   meal: MealView | null;
   dishes: readonly DishOption[];
+  /** The side list (Repas › Paramètres). */
+  sideOptions: readonly SideOption[];
   /** Dish of the meal just before: default of a leftover. */
   previousDish: string | null;
   onClose: () => void;
@@ -34,7 +37,7 @@ type Props = {
 
 type Values = { dateIso: string; slot: MealSlot; kind: MealKind; dishName: string; label: string; note: string; validated: boolean };
 
-export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, previousDish, onClose }: Props) {
+export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, sideOptions, previousDish, onClose }: Props) {
   const [values, setValues] = useState<Values>(() => ({
     dateIso,
     slot,
@@ -45,6 +48,8 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
     // A meal chosen by hand is validated; a generated one stays proposed until locked.
     validated: meal ? meal.status === "VALIDATED" : true,
   }));
+  const [sides, setSides] = useState<string[]>(() => meal?.sides.map((side) => side.name) ?? []);
+  const [newSide, setNewSide] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -57,7 +62,7 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
       const common = { note: values.note, validated: values.validated };
       const result = await saveMeal(
         ref,
-        values.kind === "OUT" ? { kind: "OUT", label: values.label, ...common } : { kind: values.kind, dishName: values.dishName, ...common },
+        values.kind === "OUT" ? { kind: "OUT", label: values.label, ...common } : { kind: values.kind, dishName: values.dishName, sides, ...common },
       );
       if (result.ok) onClose();
       else {
@@ -72,6 +77,16 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
       if (result.ok) onClose();
       else setFormError(result.error);
     });
+
+  const hasSide = (name: string) => sides.some((side) => ingredientKey(side) === ingredientKey(name));
+  const toggleSide = (name: string) =>
+    setSides((current) => (hasSide(name) ? current.filter((side) => ingredientKey(side) !== ingredientKey(name)) : [...current, name]));
+  const addNewSide = () => {
+    const name = newSide.trim();
+    if (name && !hasSide(name)) setSides((current) => [...current, name]);
+    setNewSide("");
+  };
+  const sideChoices = [...sideOptions.map((side) => side.name), ...sides.filter((name) => !sideOptions.some((side) => ingredientKey(side.name) === ingredientKey(name)))];
 
   const query = values.dishName.trim().toLowerCase();
   const quickDishes = (query ? dishes.filter((dish) => dish.name.toLowerCase().includes(query)) : dishes).slice(0, 10);
@@ -173,7 +188,7 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
                   ref={dishRef}
                   value={values.dishName}
                   onChange={(event) => set({ dishName: event.target.value })}
-                  placeholder={values.kind === "LEFTOVER" ? "Reste de…" : "Quel plat ?"}
+                  placeholder={values.kind === "LEFTOVER" ? "Reste de…" : "Quel plat ? (vide = accompagnements seuls)"}
                   maxLength={120}
                   autoComplete="off"
                   enterKeyHint="done"
@@ -196,6 +211,40 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, prev
                   </div>
                 ) : null}
                 {errors.dishName ? <p className="text-sm text-destructive">{errors.dishName}</p> : null}
+
+                <fieldset className="mt-2 grid gap-2">
+                  <legend className="mb-1 text-sm font-semibold opacity-75">Accompagnements</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {sideChoices.map((name) => (
+                      <button key={name} type="button" aria-pressed={hasSide(name)} onClick={() => toggleSide(name)} className={chipClass}>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <label htmlFor="meal-new-side" className="sr-only">
+                      Autre accompagnement
+                    </label>
+                    <input
+                      id="meal-new-side"
+                      value={newSide}
+                      onChange={(event) => setNewSide(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addNewSide();
+                        }
+                      }}
+                      placeholder="Autre accompagnement"
+                      maxLength={80}
+                      autoComplete="off"
+                      className={`${inputClass} max-w-xs`}
+                    />
+                    <button type="button" onClick={addNewSide} disabled={!newSide.trim()} className={`${clay.btn} ${clay.btnPlain} text-sm`}>
+                      Ajouter
+                    </button>
+                  </div>
+                </fieldset>
               </div>
             )}
 

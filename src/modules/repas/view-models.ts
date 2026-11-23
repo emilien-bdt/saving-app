@@ -9,12 +9,16 @@ export type MealView = {
   kind: MealKind;
   dishId: string | null;
   dishName: string | null;
+  /** Side items (chips, salade…). */
+  sides: SideOption[];
   label: string | null;
   note: string | null;
   status: MealStatus;
 };
 
 export type DishOption = { id: string; name: string; count: number };
+
+export type SideOption = { id: string; name: string };
 
 export type DishIngredientView = {
   ingredientId: string;

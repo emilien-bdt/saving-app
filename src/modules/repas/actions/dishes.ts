@@ -74,3 +74,21 @@ export async function deleteDish(id: string): Promise<ActionResult> {
   revalidateRepas();
   return { ok: true };
 }
+
+/** "Ce n'est pas un plat": the dish becomes a side item of its meals. */
+export async function convertDishToSide(id: string): Promise<ActionResult> {
+  await requireSession();
+  if (!idSchema.safeParse(id).success || !(await repository.dishToSide(id))) return failure("Ce plat n'existe plus");
+  revalidateRepas();
+  return { ok: true };
+}
+
+/** Adds an item to the side list, or removes it (the item stays on past meals). */
+export async function setSideItem(name: string, side: boolean): Promise<ActionResult> {
+  await requireSession();
+  const parsed = z.object({ name: z.string().trim().min(1, "Nom obligatoire").max(80), side: z.boolean() }).safeParse({ name, side });
+  if (!parsed.success) return failure(parsed.error.issues[0]?.message ?? "Nom invalide");
+  await repository.setSide(parsed.data.name, parsed.data.side);
+  revalidateRepas();
+  return { ok: true };
+}

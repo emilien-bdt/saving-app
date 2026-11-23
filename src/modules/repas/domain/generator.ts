@@ -9,15 +9,17 @@
 //   already in the week is excluded;
 // - variety: × 0.4 per dish of the week sharing its main word ("pates").
 // A lunch after a home-cooked dinner becomes its leftover with the
-// probability observed in the history.
+// probability observed in the history. A proposed dish comes with its usual
+// sides (eaten with it at least half of the times).
 
 import { dishKey, mainIngredientWord } from "./dish-key";
 import type { MealCell, MealKind } from "./grid";
+import { habitualSides } from "./sides";
 import { type SlotRef, diffInDays, previousSlot, slotKey } from "./week";
 
-export type HistoryMeal = { date: Date; slot: SlotRef["slot"]; kind: MealKind; dishId: string | null };
+export type HistoryMeal = { date: Date; slot: SlotRef["slot"]; kind: MealKind; dishId: string | null; sides: readonly string[] };
 export type CandidateDish = { id: string; name: string };
-export type Proposal = { ref: SlotRef; kind: "DISH" | "LEFTOVER"; dishId: string };
+export type Proposal = { ref: SlotRef; kind: "DISH" | "LEFTOVER"; dishId: string; sides: readonly string[] };
 
 export type GenerateInput = {
   monday: Date;
@@ -80,6 +82,7 @@ export function generateMenu(input: GenerateInput): Proposal[] {
   }
 
   const dishById = new Map(input.dishes.map((dish) => [dish.id, dish]));
+  const usualSides = habitualSides(input.history);
   const planned = new Map<string, { kind: MealKind; dishId: string | null }>();
   for (const cell of input.fixed) planned.set(slotKey(cell), { kind: cell.kind, dishId: cell.dishId });
 
@@ -95,7 +98,7 @@ export function generateMenu(input: GenerateInput): Proposal[] {
     const before = planned.get(slotKey(previousSlot(ref)));
     if (ref.slot === "LUNCH" && before?.kind === "DISH" && before.dishId && random() < leftoverRate) {
       planned.set(slotKey(ref), { kind: "LEFTOVER", dishId: before.dishId });
-      proposals.push({ ref, kind: "LEFTOVER", dishId: before.dishId });
+      proposals.push({ ref, kind: "LEFTOVER", dishId: before.dishId, sides: [] });
       continue;
     }
 
@@ -125,7 +128,7 @@ export function generateMenu(input: GenerateInput): Proposal[] {
     }
     if (!chosen) continue;
     planned.set(slotKey(ref), { kind: "DISH", dishId: chosen.id });
-    proposals.push({ ref, kind: "DISH", dishId: chosen.id });
+    proposals.push({ ref, kind: "DISH", dishId: chosen.id, sides: usualSides.get(chosen.id) ?? [] });
   }
   return proposals;
 }

@@ -1,6 +1,7 @@
 // Module Repas. Dates are calendar dates (@db.Date, UTC-midnight Date objects).
 // CHECK constraints live in the migration SQL:
-// - DISH / LEFTOVER ⇒ dishId NOT NULL ; OUT ⇒ dishId NULL AND label NOT NULL ;
+// - LEFTOVER ⇒ dishId NOT NULL ; DISH ⇒ dishId facultatif (null = accompagnements seuls) ;
+//   OUT ⇒ dishId NULL AND label NOT NULL ;
 // - non-empty dish name / key; label and note lengths;
 // - ingredient name length, positive amounts and pack sizes.
 
@@ -54,6 +55,7 @@ model RepasMeal {
   importRef String?         @unique
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+  sides     RepasMealSide[]
 
   @@unique([date, slot])
   @@index([dishId])
@@ -92,9 +94,12 @@ model RepasIngredient {
   unit       RepasUnit             @default(PIECE)
   /// Size of what is bought (200 for a 200 g pack); null = sold by the unit.
   packAmount Int?
+  /// Side item (chips, salade…): split from dish names, offered in the meal editor.
+  side       Boolean               @default(false)
   createdAt  DateTime              @default(now())
   updatedAt  DateTime              @updatedAt
   dishes     RepasDishIngredient[]
+  meals      RepasMealSide[]
 
   @@map("repas_ingredient")
 }
@@ -115,4 +120,18 @@ model RepasDishIngredient {
   @@unique([dishId, ingredientId])
   @@index([ingredientId])
   @@map("repas_dish_ingredient")
+}
+
+/// Side item of a meal (bought as is, not part of the dish's recipe).
+model RepasMealSide {
+  id           String          @id @default(cuid())
+  mealId       String
+  meal         RepasMeal       @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   RepasIngredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  sortOrder    Int             @default(0)
+
+  @@unique([mealId, ingredientId])
+  @@index([ingredientId])
+  @@map("repas_meal_side")
 }

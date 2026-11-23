@@ -20,9 +20,9 @@ import Link from "next/link";
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, useOptimistic, useState, useTransition } from "react";
 import { clearMeal, generateWeek, moveMeal, setMealValidated, setWeekValidated } from "../actions/meals";
 import type { MealSlot } from "../domain/week";
-import type { DishOption, MealView } from "../view-models";
+import type { DishOption, MealView, SideOption } from "../view-models";
 import { clay } from "./clay";
-import { dishHue, mealTitle, SLOT_LABELS } from "./labels";
+import { dishHue, mealTitle, SLOT_LABELS, sidesLine } from "./labels";
 import { MealEditor } from "./meal-editor";
 
 export type DayView = { dateIso: string; label: string; isToday: boolean; lunch: MealView | null; dinner: MealView | null };
@@ -36,6 +36,7 @@ type Props = {
   /** Sunday dinner of the previous week (default of Monday's leftover). */
   dayBeforeDinner: MealView | null;
   dishes: readonly DishOption[];
+  sides: readonly SideOption[];
 };
 
 type Key = `${string}:${MealSlot}`;
@@ -88,7 +89,7 @@ const SlotIcon = ({ slot }: { slot: MealSlot }) =>
   slot === "LUNCH" ? <Sun className="size-3.5" aria-hidden /> : <Moon className="size-3.5" aria-hidden />;
 
 /** The week grid: generate, validate (lock), drag and drop, delete, edit a cell. */
-export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBeforeDinner, dishes }: Props) {
+export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBeforeDinner, dishes, sides }: Props) {
   const [optimisticDays, addChange] = useOptimistic(days, applyChange);
   const [pending, startTransition] = useTransition();
   const [busyKey, setBusyKey] = useState<Key | "week" | null>(null);
@@ -165,7 +166,8 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
     }
 
     const validated = meal.status === "VALIDATED";
-    const style = meal.kind !== "OUT" && meal.dishId ? ({ "--hue": dishHue(meal.dishId) } as CSSProperties) : undefined;
+    const hueId = meal.dishId ?? meal.sides[0]?.id ?? null;
+    const style = meal.kind !== "OUT" && hueId ? ({ "--hue": dishHue(hueId) } as CSSProperties) : undefined;
     const classes = [
       clay.meal,
       meal.kind === "OUT" ? clay.out : validated ? "" : clay.proposed,
@@ -194,6 +196,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
             </span>
           ) : null}
           <span className={`${clay.mealTitle} line-clamp-3 block`}>{mealTitle(meal)}</span>
+          {sidesLine(meal) ? <span className="mt-1 block text-sm font-semibold opacity-80">{sidesLine(meal)}</span> : null}
           {meal.note ? <span className="mt-0.5 block truncate text-sm opacity-75">{meal.note}</span> : null}
         </button>
         <div className="flex items-center gap-1.5">
@@ -314,6 +317,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
           slot={refOf(editing.key).slot}
           meal={editing.meal}
           dishes={dishes}
+          sideOptions={sides}
           previousDish={previousMealDish(editing.key)}
           onClose={() => setEditing(null)}
         />

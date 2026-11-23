@@ -10,8 +10,10 @@ export type MealCell = {
   date: Date;
   slot: MealSlot;
   kind: MealKind;
-  /** DISH / LEFTOVER: the dish eaten (a leftover points to the cooked dish). */
+  /** LEFTOVER: the cooked dish; DISH: the dish, or null for sides only ("concombre + feta"). */
   dishId: string | null;
+  /** Ingredient ids of the side items (chips, salad…), in display order. */
+  sides: readonly string[];
   /** OUT: "Absent", "Restaurant…". */
   label: string | null;
   note: string | null;
@@ -57,6 +59,7 @@ export function moveMeal(cells: readonly MealCell[], from: SlotRef, to: SlotRef)
   const strip = (cell: MealCell): SlotChange["cell"] => ({
     kind: cell.kind,
     dishId: cell.dishId,
+    sides: cell.sides,
     label: cell.label,
     note: cell.note,
     status: cell.status,

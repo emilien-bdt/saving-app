@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/shared/auth/server";
-import { findOrCreateDish, getDishOptions } from "../data/dishes";
+import { findOrCreateDish, findOrCreateSides, getDishOptions } from "../data/dishes";
 import * as repository from "../data/meals";
 import { generateMenu } from "../domain/generator";
 import { type MealCell, fillableSlots, moveMeal as planMove } from "../domain/grid";
@@ -37,10 +37,11 @@ export async function saveMeal(ref: SlotRefInput, input: MealInput): Promise<Act
   const data = parsed.data;
   const status = data.validated ? "VALIDATED" : "PROPOSED";
   if (data.kind === "OUT") {
-    await repository.upsertMeal(slot.data, { kind: "OUT", dishId: null, label: data.label, note: data.note, status });
+    await repository.upsertMeal(slot.data, { kind: "OUT", dishId: null, sides: [], label: data.label, note: data.note, status });
   } else {
-    const dishId = await findOrCreateDish(data.dishName);
-    await repository.upsertMeal(slot.data, { kind: data.kind, dishId, label: null, note: data.note, status });
+    const dishId = data.dishName ? await findOrCreateDish(data.dishName) : null;
+    const sides = await findOrCreateSides(data.sides);
+    await repository.upsertMeal(slot.data, { kind: data.kind, dishId, sides, label: null, note: data.note, status });
   }
   revalidateRepas();
   return { ok: true };
@@ -84,7 +85,7 @@ export async function moveMeal(from: SlotRefInput, to: SlotRefInput): Promise<Ac
     new Date(Math.min(source.date.getTime(), target.date.getTime())),
     new Date(Math.max(source.date.getTime(), target.date.getTime())),
   );
-  await repository.applyChanges(planMove(rows, source, target));
+  await repository.applyChanges(planMove(rows.map(repository.toCell), source, target));
   revalidateRepas();
   return { ok: true };
 }
@@ -104,7 +105,7 @@ export async function generateWeek(week: string, only: SlotRefInput | null = nul
   const [rows, history, dishes] = await Promise.all([repository.getWeekMeals(monday), repository.getHistory(monday), getDishOptions()]);
   if (dishes.length === 0) return failure("Aucun plat connu : saisis quelques repas ou importe ton historique");
 
-  const cells: MealCell[] = rows;
+  const cells: MealCell[] = rows.map(repository.toCell);
   const slots = fillableSlots(monday, cells, onlyRef?.data);
   if (slots.length === 0) return failure(onlyRef ? "Ce repas est validé" : "Toute la semaine est déjà validée");
   const targeted = new Set(slots.map(slotKey));

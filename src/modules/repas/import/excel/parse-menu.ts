@@ -7,6 +7,7 @@
 // plain grid so this module stays pure and testable.
 
 import { cleanDishName, dishKey } from "../../domain/dish-key";
+import { DEFAULT_SIDE_KEYS, splitMealName } from "../../domain/sides";
 import {
   type MealSlot,
   addDays,
@@ -109,7 +110,7 @@ export function classifyMealCell(raw: string): Classified {
   if (key === "x") return { kind: "OUT", label: "Absent", note };
 
   if (key.startsWith("reste")) {
-    let hint = key.replace(/^reste\b/, "").replace(/^[\s|:\-–]+/, "");
+    let hint = key.replace(/^restes?\b/, "").replace(/^[\s|:\-–]+/, "");
     if (ZOE.test(hint)) {
       note = "Zoë";
       hint = hint.replace(ZOE, "");
@@ -291,7 +292,9 @@ export function parsePlanningSheet(grid: SheetGrid, fileName: string, fallbackYe
 }
 
 export type ResolvedMeal =
-  | { kind: "DISH" | "LEFTOVER"; date: Date; slot: MealSlot; dishName: string; note: string | null }
+  /** dishName null = sides only ("Concombre + feta"). */
+  | { kind: "DISH"; date: Date; slot: MealSlot; dishName: string | null; sides: string[]; note: string | null }
+  | { kind: "LEFTOVER"; date: Date; slot: MealSlot; dishName: string; sides: string[]; note: string | null }
   | { kind: "OUT"; date: Date; slot: MealSlot; label: string; note: string | null };
 
 /**
@@ -301,8 +304,12 @@ export type ResolvedMeal =
  * - "reste gratin" → the most recent dish (within 3 days) containing "gratin",
  *   otherwise a dish named after the hint;
  * - a lunch identical to the previous dinner is a leftover of it.
+ * Dishes are split into dish + sides ("Croques + chips", domain/sides.ts).
  */
-export function mergeAndResolve(files: readonly ParsedMenuFile[]): { meals: ResolvedMeal[]; warnings: string[] } {
+export function mergeAndResolve(
+  files: readonly ParsedMenuFile[],
+  sideKeys: ReadonlySet<string> = DEFAULT_SIDE_KEYS,
+): { meals: ResolvedMeal[]; warnings: string[] } {
   const warnings: string[] = [];
   const bySlot = new Map<string, ParsedMeal>();
   const sorted = [...files].sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
@@ -317,7 +324,7 @@ export function mergeAndResolve(files: readonly ParsedMenuFile[]): { meals: Reso
     let ref = previousSlot(meal);
     for (let i = 0; i < lookBack; i++) {
       const found = resolved.get(slotKey(ref));
-      if (found && found.kind !== "OUT" && matches(dishKey(found.dishName))) return found.dishName;
+      if (found && found.kind !== "OUT" && found.dishName && matches(dishKey(found.dishName))) return found.dishName;
       ref = previousSlot(ref);
     }
     return null;
@@ -330,9 +337,25 @@ export function mergeAndResolve(files: readonly ParsedMenuFile[]): { meals: Reso
       continue;
     }
     if (meal.kind === "DISH") {
+      const { dishName, sides } = splitMealName(meal.dishName, sideKeys);
+      // "Concombre + reste gratin": the dish part is a leftover.
+      const rest = dishName === null ? null : classifyMealCell(dishName);
+      if (rest?.kind === "LEFTOVER") {
+        const hint = rest.hint;
+        const origin = hint ? (dishBefore(meal, 6, (k) => k.includes(hint)) ?? cleanDishName(hint)) : dishBefore(meal, 2, () => true);
+        if (origin) {
+          resolved.set(key, { kind: "LEFTOVER", date: meal.date, slot: meal.slot, dishName: origin, sides, note: meal.note });
+          continue;
+        }
+      }
       const isLeftover =
-        meal.slot === "LUNCH" && dishBefore(meal, 1, (k) => k === dishKey(meal.dishName)) !== null;
-      resolved.set(key, { ...meal, kind: isLeftover ? "LEFTOVER" : "DISH" });
+        dishName !== null && meal.slot === "LUNCH" && dishBefore(meal, 1, (k) => k === dishKey(dishName)) !== null;
+      resolved.set(
+        key,
+        dishName !== null && isLeftover
+          ? { kind: "LEFTOVER", date: meal.date, slot: meal.slot, dishName, sides, note: meal.note }
+          : { kind: "DISH", date: meal.date, slot: meal.slot, dishName, sides, note: meal.note },
+      );
       continue;
     }
     const hint = meal.hint;
@@ -343,7 +366,7 @@ export function mergeAndResolve(files: readonly ParsedMenuFile[]): { meals: Reso
       warnings.push(`${toIsoDate(meal.date)} ${meal.slot} : reste sans plat d'origine, ignoré`);
       continue;
     }
-    resolved.set(key, { kind: "LEFTOVER", date: meal.date, slot: meal.slot, dishName, note: meal.note });
+    resolved.set(key, { kind: "LEFTOVER", date: meal.date, slot: meal.slot, dishName, sides: [], note: meal.note });
   }
 
   return { meals: [...resolved.values()], warnings };
@@ -353,7 +376,7 @@ export function mergeAndResolve(files: readonly ParsedMenuFile[]): { meals: Reso
 export function buildDishCatalogue(meals: readonly ResolvedMeal[]): Map<string, string> {
   const spellings = new Map<string, Map<string, number>>();
   for (const meal of meals) {
-    if (meal.kind === "OUT") continue;
+    if (meal.kind === "OUT" || meal.dishName === null) continue;
     const key = dishKey(meal.dishName);
     const counts = spellings.get(key) ?? new Map<string, number>();
     counts.set(meal.dishName, (counts.get(meal.dishName) ?? 0) + 1);

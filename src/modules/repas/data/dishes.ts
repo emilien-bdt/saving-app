@@ -1,8 +1,8 @@
 import { db } from "@/shared/lib/db";
 import { cleanDishName, dishKey } from "../domain/dish-key";
-import { type Aisle, findLikelyDuplicates, ingredientKey, type Unit } from "../domain/ingredients";
+import { type Aisle, findLikelyDuplicates, guessAisle, ingredientKey, type Unit } from "../domain/ingredients";
 import { toIsoDate } from "../domain/week";
-import type { DishItem, DishOption, IngredientOption } from "../view-models";
+import type { DishItem, DishOption, IngredientOption, SideOption } from "../view-models";
 
 /** Existing dish with the same normalised name, or a new one. */
 export async function findOrCreateDish(name: string): Promise<string> {
@@ -140,4 +140,65 @@ export async function mergeDishes(sourceId: string, targetId: string): Promise<b
 export async function deleteUnusedDish(id: string): Promise<boolean> {
   const { count } = await db.repasDish.deleteMany({ where: { id, meals: { none: {} } } });
   return count > 0;
+}
+
+/** Ingredient ids of the given side items (unknown ones are created as sides). */
+export async function findOrCreateSides(names: readonly string[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const name of names) {
+    const key = ingredientKey(name);
+    const ingredient = await db.repasIngredient.upsert({
+      where: { key },
+      create: { key, name: cleanDishName(name), aisle: guessAisle(name), side: true },
+      update: {},
+      select: { id: true },
+    });
+    if (!ids.includes(ingredient.id)) ids.push(ingredient.id);
+  }
+  return ids;
+}
+
+/** The side list (Repas › Paramètres), most used first. */
+export async function getSideOptions(): Promise<SideOption[]> {
+  const rows = await db.repasIngredient.findMany({
+    where: { side: true },
+    select: { id: true, name: true, _count: { select: { meals: true } } },
+  });
+  return rows
+    .sort((a, b) => b._count.meals - a._count.meals || a.name.localeCompare(b.name, "fr"))
+    .map(({ id, name }) => ({ id, name }));
+}
+
+export async function setSide(name: string, side: boolean): Promise<void> {
+  const key = ingredientKey(name);
+  await db.repasIngredient.upsert({
+    where: { key },
+    create: { key, name: cleanDishName(name), aisle: guessAisle(name), side },
+    update: { side },
+  });
+}
+
+/**
+ * "Ce n'est pas un plat": the dish becomes a side item. Its cooked meals keep
+ * no dish and get the side; its leftovers become meals with that side.
+ */
+export async function dishToSide(dishId: string): Promise<boolean> {
+  return db.$transaction(async (tx) => {
+    const dish = await tx.repasDish.findUnique({ where: { id: dishId }, select: { name: true, meals: { select: { id: true } } } });
+    if (!dish) return false;
+    const key = ingredientKey(dish.name);
+    const ingredient = await tx.repasIngredient.upsert({
+      where: { key },
+      create: { key, name: dish.name, aisle: guessAisle(dish.name), side: true },
+      update: { side: true },
+      select: { id: true },
+    });
+    await tx.repasMealSide.createMany({
+      data: dish.meals.map((meal) => ({ mealId: meal.id, ingredientId: ingredient.id, sortOrder: -1 })),
+      skipDuplicates: true,
+    });
+    await tx.repasMeal.updateMany({ where: { dishId }, data: { dishId: null, kind: "DISH" } });
+    await tx.repasDish.delete({ where: { id: dishId } });
+    return true;
+  });
 }

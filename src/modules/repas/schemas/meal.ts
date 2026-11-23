@@ -16,9 +16,24 @@ const note = z
 
 const dishName = z.string().trim().min(1, "Plat obligatoire").max(120, "120 caractères maximum");
 
+const sides = z.array(z.string().trim().min(1).max(80)).max(10, "10 accompagnements maximum").default([]);
+
 export const mealInputSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("DISH"), dishName, note, validated: z.boolean() }),
-  z.object({ kind: z.literal("LEFTOVER"), dishName, note, validated: z.boolean() }),
+  z
+    .object({
+      kind: z.literal("DISH"),
+      /** "" = sides only ("concombre + feta"). */
+      dishName: z
+        .string()
+        .trim()
+        .max(120, "120 caractères maximum")
+        .transform((value) => value || null),
+      sides,
+      note,
+      validated: z.boolean(),
+    })
+    .refine((meal) => meal.dishName !== null || meal.sides.length > 0, { message: "Plat ou accompagnement obligatoire", path: ["dishName"] }),
+  z.object({ kind: z.literal("LEFTOVER"), dishName, sides, note, validated: z.boolean() }),
   z.object({
     kind: z.literal("OUT"),
     label: z.string().trim().min(1, "Libellé obligatoire").max(120, "120 caractères maximum"),

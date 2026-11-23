@@ -6,7 +6,7 @@ const monday = utcDate(2026, 11, 23);
 const tuesday = utcDate(2026, 11, 24);
 
 function cell(date: Date, slot: MealCell["slot"], dishId: string, status: MealCell["status"] = "PROPOSED"): MealCell {
-  return { date, slot, kind: "DISH", dishId, label: null, note: null, status };
+  return { date, slot, kind: "DISH", dishId, sides: [], label: null, note: null, status };
 }
 
 describe("grid", () => {

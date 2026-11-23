@@ -149,4 +149,26 @@ describe("files", () => {
       ["2026-11-17", "Gruyère"],
     ]);
   });
+
+  it("separates sides from the dish", () => {
+    const parsed = parseMenuSheet(
+      grid({
+        3: { E: "Midi", G: "Soir" },
+        4: { D: "Lundi", E: "concombre + feta", G: "Croques monsieurs + chips" },
+        6: { D: "Mardi", E: "croques monsieurs", G: "pates carbo + salade" },
+        8: { D: "Mercredi", E: "concombre + reste carbo" },
+      }),
+      "repas-23-03-26.xlsx",
+    );
+    const { meals } = mergeAndResolve([parsed]);
+    expect(meals.map((m) => (m.kind === "OUT" ? m.label : [m.kind, m.dishName, m.sides]))).toEqual([
+      ["DISH", null, ["Concombre", "Feta"]],
+      ["DISH", "Croques monsieurs", ["Chips"]],
+      ["LEFTOVER", "Croques monsieurs", []],
+      ["DISH", "Pates carbo", ["Salade"]],
+      ["LEFTOVER", "Pates carbo", ["Concombre"]],
+    ]);
+    expect([...buildDishCatalogue(meals).values()]).toEqual(["Croques monsieurs", "Pates carbo"]);
+  });
 });
+
