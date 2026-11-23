@@ -1,5 +1,6 @@
 import { Wallet } from "lucide-react";
 import type { AppModule } from "@/modules/types";
+import { FinancesHomeWidget } from "./components/home-widget";
 
 export const financesModule: AppModule = {
   id: "finances",
@@ -7,4 +8,5 @@ export const financesModule: AppModule = {
   href: "/finances",
   description: "Comptes, transactions et tableau de bord",
   icon: Wallet,
+  widget: FinancesHomeWidget,
 };
