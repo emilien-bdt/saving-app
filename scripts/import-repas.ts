@@ -1,30 +1,38 @@
 /**
- * Imports the former weekly menu workbooks ("repas-DD-MM-YY.xlsx").
+ * Imports the former weekly menu workbooks:
+ * - "repas-JJ-MM-AA.xlsx" (one block of two rows per day);
+ * - "planning-menu-JJ-MM.xlsx" (days in columns, sheet "Planning menus en ligne"); no
+ *   year in the name: the year of the file's modification date is used.
  *   npm run import:repas -- --dry-run ~/Documents/Repas/*.xlsx
  */
 import "dotenv/config";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { readWorkbook } from "../src/modules/finances/import/excel/xlsx";
 import { toIsoDate } from "../src/modules/repas/domain/week";
 import {
   buildDishCatalogue,
   mergeAndResolve,
+  type ParsedMenuFile,
   parseMenuSheet,
+  parsePlanningSheet,
   type SheetGrid,
 } from "../src/modules/repas/import/excel/parse-menu";
 
 const USAGE = `Usage : npm run import:repas -- [--dry-run] [--replace] repas-20-10-25.xlsx repas-17-11-25.xlsx …
   --dry-run   affiche le rapport sans rien écrire en base
   --replace   supprime d'abord les repas importés (les saisies de l'app sont conservées)
-La semaine est lue dans le nom du fichier (JJ-MM-AA, ramené au lundi le plus proche).`;
+La semaine est lue dans le nom du fichier (JJ-MM-AA ou JJ-MM, ramené au lundi le plus proche) ;
+sans année, celle de la date de modification du fichier.`;
 
 const KNOWN_FLAGS = new Set(["--dry-run", "--replace", "--help"]);
 
-/** First sheet of the workbook as row → column → text. */
-function toGrid(path: string): SheetGrid {
+const PLANNING_SHEET = "Planning menus en ligne";
+
+/** One sheet of the workbook as row → column → text (default: the first one). */
+function toGrid(path: string, sheetName?: string): SheetGrid {
   const workbook = readWorkbook(readFileSync(path));
-  const sheet = [...workbook.sheets.values()][0];
+  const sheet = (sheetName ? workbook.sheets.get(sheetName) : undefined) ?? [...workbook.sheets.values()][0];
   const grid = new Map<number, Map<string, string>>();
   for (const [ref, cell] of sheet ?? []) {
     const match = /^([A-Z]+)(\d+)$/.exec(ref);
@@ -38,6 +46,24 @@ function toGrid(path: string): SheetGrid {
   return grid;
 }
 
+/** A name without year ("17-11") belongs to the last such date before the file was saved. */
+function yearFor(path: string, fileName: string): number {
+  const saved = statSync(path).mtime;
+  const match = /(\d{1,2})-(\d{1,2})(?=\D*$)/.exec(fileName);
+  const year = saved.getFullYear();
+  if (!match) return year;
+  const date = new Date(year, Number(match[2]) - 1, Number(match[1]));
+  return date.getTime() - saved.getTime() > 14 * 86_400_000 ? year - 1 : year;
+}
+
+function parseFile(path: string): ParsedMenuFile {
+  const fileName = basename(path);
+  if (/^planning-menu/i.test(fileName)) {
+    return parsePlanningSheet(toGrid(path, PLANNING_SHEET), fileName, yearFor(path, fileName));
+  }
+  return parseMenuSheet(toGrid(path), fileName);
+}
+
 async function main(): Promise<number> {
   const args = process.argv.slice(2);
   const flags = new Set(args.filter((arg) => arg.startsWith("--")));
@@ -49,7 +75,9 @@ async function main(): Promise<number> {
     return flags.has("--help") && unknownFlags.length === 0 ? 0 : 1;
   }
 
-  const files = paths.map((path) => parseMenuSheet(toGrid(path), basename(path)));
+  const parsed = paths.map(parseFile);
+  const files = parsed.filter((file) => file.meals.length > 0);
+  const skipped = parsed.filter((file) => file.meals.length === 0);
   const { meals, warnings } = mergeAndResolve(files);
   const catalogue = buildDishCatalogue(meals);
   const count = (kind: string) => meals.filter((meal) => meal.kind === kind).length;
@@ -60,7 +88,8 @@ async function main(): Promise<number> {
   }
   console.log(`\n${meals.length} repas : ${count("DISH")} plats cuisinés, ${count("LEFTOVER")} restes, ${count("OUT")} absences / sorties`);
   console.log(`${catalogue.size} plats distincts : ${[...catalogue.values()].sort((a, b) => a.localeCompare(b, "fr")).join(", ")}`);
-  const allWarnings = [...files.flatMap((file) => file.warnings), ...warnings];
+  const allWarnings = [...parsed.flatMap((file) => file.warnings), ...warnings];
+  if (skipped.length > 0) allWarnings.push(`${skipped.length} fichier(s) sans repas ignoré(s)`);
   if (allWarnings.length > 0) console.log(`\nAvertissements :\n${allWarnings.map((w) => `  ⚠ ${w}`).join("\n")}`);
 
   if (flags.has("--dry-run")) {

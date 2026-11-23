@@ -43,12 +43,17 @@ function columnIndex(letters: string): number {
   return index;
 }
 
-/** "repas-20-10-25.xlsx" → nearest Monday of 20/10/2025. */
-export function weekStartFromFileName(fileName: string): Date | null {
-  const match = /(\d{2})-(\d{2})-(\d{2})(?!.*\d{2}-\d{2}-\d{2})/.exec(fileName);
+/**
+ * "repas-20-10-25.xlsx", "repas-3-11-25.xlsx" → nearest Monday of that date.
+ * "planning-menu-17-11.xlsx" has no year: `fallbackYear` is used.
+ */
+export function weekStartFromFileName(fileName: string, fallbackYear?: number): Date | null {
+  const match = /(?:^|\D)(\d{1,2})-(\d{1,2})(?:-(\d{2}))?(?=\D*$)/.exec(fileName.replace(/\.xlsx?m?$/i, ""));
   if (!match) return null;
-  const date = utcDate(2000 + Number(match[3]), Number(match[2]), Number(match[1]));
-  if (date.getUTCDate() !== Number(match[1])) return null;
+  const year = match[3] ? 2000 + Number(match[3]) : fallbackYear;
+  if (year === undefined) return null;
+  const date = utcDate(year, Number(match[2]), Number(match[1]));
+  if (date.getUTCDate() !== Number(match[1]) || date.getUTCMonth() + 1 !== Number(match[2])) return null;
   return nearestMonday(date);
 }
 
@@ -93,6 +98,12 @@ export function classifyMealCell(raw: string): Classified {
     text = text.slice(0, text.indexOf("(")).trim();
   }
 
+  // "pates au pesto (reste)" = leftover of "pates au pesto".
+  if (/\(\s*reste\s*\)/i.test(text)) {
+    const hint = dishKey(text.replace(/\s*\(\s*reste\s*\)\s*/gi, " "));
+    return { kind: "LEFTOVER", hint: hint === "" ? null : hint, note };
+  }
+
   const key = dishKey(text);
   if (key === "" || key === "?" || key.length < 2 && key !== "x") return null;
   if (key === "x") return { kind: "OUT", label: "Absent", note };
@@ -103,7 +114,11 @@ export function classifyMealCell(raw: string): Classified {
       note = "Zoë";
       hint = hint.replace(ZOE, "");
     }
-    hint = hint.replace(/^(de la veille|de|du|des)\b/, "").replace(/^[\s|]+/, "").trim();
+    hint = hint
+      .replace(/\(.*?\)/g, "")
+      .replace(/^(de la veille|de|du|des)\b/, "")
+      .replace(/^[\s|]+/, "")
+      .trim();
     return { kind: "LEFTOVER", hint: hint === "" ? null : hint, note };
   }
 
@@ -122,9 +137,9 @@ export function splitShoppingCell(raw: string): string[] {
     .map(cleanDishName);
 }
 
-export function parseMenuSheet(grid: SheetGrid, fileName: string): ParsedMenuFile {
+export function parseMenuSheet(grid: SheetGrid, fileName: string, fallbackYear?: number): ParsedMenuFile {
   const warnings: string[] = [];
-  const weekStart = weekStartFromFileName(fileName);
+  const weekStart = weekStartFromFileName(fileName, fallbackYear);
   if (!weekStart) {
     return { weekStart: utcDate(1970, 1, 1), meals: [], shopping: [], warnings: [`${fileName} : date introuvable dans le nom du fichier`] };
   }
@@ -200,6 +215,78 @@ export function parseMenuSheet(grid: SheetGrid, fileName: string): ParsedMenuFil
     }
   });
 
+  return { weekStart, meals, shopping, warnings };
+}
+
+const pushMeal = (meals: ParsedMeal[], date: Date, slot: MealSlot, value: string): boolean => {
+  const classified = classifyMealCell(value);
+  if (!classified) return false;
+  if (classified.kind === "LEFTOVER") meals.push({ kind: "LEFTOVER", date, slot, dishName: null, hint: classified.hint, note: classified.note });
+  else if (classified.kind === "OUT") meals.push({ kind: "OUT", date, slot, label: classified.label, note: classified.note });
+  else meals.push({ kind: "DISH", date, slot, dishName: classified.dishName, note: classified.note });
+  return true;
+};
+
+/**
+ * "planning-menu-JJ-MM.xlsx" (sheet "Planning menus en ligne"): days in
+ * columns (Lundi … Dimanche on one row), sections "Midi" / "Soir" with
+ * Entrée / Plat / Dessert rows; only "Plat" is kept. Rows below the last
+ * section are the week's shopping, column = day.
+ */
+export function parsePlanningSheet(grid: SheetGrid, fileName: string, fallbackYear?: number): ParsedMenuFile {
+  const weekStart = weekStartFromFileName(fileName, fallbackYear);
+  if (!weekStart) {
+    return { weekStart: utcDate(1970, 1, 1), meals: [], shopping: [], warnings: [`${fileName} : date introuvable dans le nom du fichier`] };
+  }
+  const warnings: string[] = [];
+  const rows = [...grid.keys()].sort((a, b) => a - b);
+
+  // Row of day names → column of each day.
+  const dayColumns = new Map<string, number>();
+  let daysRow = -1;
+  for (const row of rows) {
+    for (const [col, value] of grid.get(row) ?? []) {
+      const dayIndex = DAY_NAMES.indexOf(dishKey(value));
+      if (dayIndex >= 0 && !dayColumns.has(col)) dayColumns.set(col, dayIndex);
+    }
+    if (dayColumns.size >= 7) {
+      daysRow = row;
+      break;
+    }
+    dayColumns.clear();
+  }
+  if (daysRow < 0) return { weekStart, meals: [], shopping: [], warnings: [`${fileName} : ligne des jours introuvable`] };
+  const firstDayCol = Math.min(...[...dayColumns.keys()].map(columnIndex));
+
+  const meals: ParsedMeal[] = [];
+  const shopping: ParsedShoppingLine[] = [];
+  let section: MealSlot | null = null;
+  let lastSectionRow = daysRow;
+  for (const row of rows) {
+    if (row <= daysRow) continue;
+    const cells = grid.get(row) ?? new Map<string, string>();
+    const labels = [...cells.entries()].filter(([col]) => columnIndex(col) < firstDayCol).map(([, v]) => dishKey(v));
+    if (labels.includes("midi")) section = "LUNCH";
+    if (labels.includes("soir")) section = "DINNER";
+    if (labels.some((label) => ["midi", "soir", "entree", "plat", "dessert"].includes(label))) lastSectionRow = row;
+    if (!section || !labels.includes("plat")) continue;
+    for (const [col, value] of cells) {
+      const dayIndex = dayColumns.get(col);
+      if (dayIndex === undefined) continue;
+      const date = addDays(weekStart, dayIndex);
+      if (!pushMeal(meals, date, section, value) && dishKey(value) !== "?") {
+        warnings.push(`${fileName} : ${toIsoDate(date)} ${section} ignoré (« ${value.trim()} »)`);
+      }
+    }
+  }
+  for (const row of rows) {
+    if (row <= lastSectionRow) continue;
+    for (const [col, value] of grid.get(row) ?? []) {
+      const dayIndex = dayColumns.get(col);
+      if (dayIndex === undefined) continue;
+      for (const label of splitShoppingCell(value)) shopping.push({ weekStart, date: addDays(weekStart, dayIndex), label });
+    }
+  }
   return { weekStart, meals, shopping, warnings };
 }
 

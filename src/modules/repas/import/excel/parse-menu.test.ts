@@ -6,6 +6,7 @@ import {
   classifyMealCell,
   mergeAndResolve,
   parseMenuSheet,
+  parsePlanningSheet,
   splitShoppingCell,
   weekStartFromFileName,
 } from "./parse-menu";
@@ -28,7 +29,10 @@ describe("classifyMealCell", () => {
     expect(classifyMealCell("reste")).toEqual({ kind: "LEFTOVER", hint: null, note: null });
     expect(classifyMealCell("reste | tadoki - carbo")).toMatchObject({ hint: "tadoki - carbo" });
     expect(classifyMealCell("reste gratin")).toMatchObject({ hint: "gratin" });
+    expect(classifyMealCell("reste - riz thon mayo")).toMatchObject({ hint: "riz thon mayo" });
     expect(classifyMealCell("reste zoë")).toEqual({ kind: "LEFTOVER", hint: null, note: "Zoë" });
+    expect(classifyMealCell("pates au pesto (reste)")).toEqual({ kind: "LEFTOVER", hint: "pates au pesto", note: null });
+    expect(classifyMealCell("reste saucisses (avec riz ou semoule)")).toMatchObject({ hint: "saucisses" });
     expect(classifyMealCell("zoe : reste de la veille")).toEqual({ kind: "LEFTOVER", hint: null, note: "Zoë" });
   });
 
@@ -46,6 +50,11 @@ describe("classifyMealCell", () => {
 describe("files", () => {
   it("takes the nearest Monday from the file name", () => {
     expect(toIsoDate(weekStartFromFileName("repas-30-05-26.xlsx") ?? new Date(0))).toBe("2026-06-01");
+    expect(toIsoDate(weekStartFromFileName("repas-3-11-25.xlsx") ?? new Date(0))).toBe("2025-11-03");
+    expect(toIsoDate(weekStartFromFileName("repas-10-08-26 copie.xlsx") ?? new Date(0))).toBe("2026-08-10");
+    expect(toIsoDate(weekStartFromFileName("planning-menu-17-11.xlsx", 2026) ?? new Date(0))).toBe("2026-11-16");
+    expect(weekStartFromFileName("planning-menu-17-11.xlsx")).toBeNull();
+    expect(weekStartFromFileName("planning-menu.xlsx", 2026)).toBeNull();
     expect(weekStartFromFileName("menus.xlsx")).toBeNull();
   });
 
@@ -110,5 +119,34 @@ describe("files", () => {
     const later = parseMenuSheet(grid({ 3: { E: "Midi", G: "Soir" }, 4: { D: "Lundi", G: "x" } }), "repas-30-05-26.xlsx");
     const { meals } = mergeAndResolve([later, first]);
     expect(meals.map((m) => [toIsoDate(m.date), m.kind])).toEqual([["2026-06-01", "OUT"]]);
+  });
+
+  it("parses the planning-menu layout (days in columns)", () => {
+    const parsed = parsePlanningSheet(
+      grid({
+        5: { D: "Lundi", E: "Mardi", F: "Mercredi", G: "Jeudi", H: "Vendredi", I: "Samedi", J: "Dimanche" },
+        6: { B: "Midi", C: "Entrée", D: "Salade de tomates" },
+        7: { C: "Plat", D: "x", F: "reste pates carbo" },
+        8: { C: "Dessert" },
+        9: { B: "Soir", C: "Entrée" },
+        10: { C: "Plat", E: "pates carbonara", F: "Croques monsieurs" },
+        11: { C: "Dessert" },
+        13: { E: "lardons", F: "pain de mie" },
+        14: { E: "gruyère" },
+      }),
+      "planning-menu-17-11.xlsx",
+      2026,
+    );
+    expect(parsed.meals.map((m) => [toIsoDate(m.date), m.slot, m.kind])).toEqual([
+      ["2026-11-16", "LUNCH", "OUT"],
+      ["2026-11-18", "LUNCH", "LEFTOVER"],
+      ["2026-11-17", "DINNER", "DISH"],
+      ["2026-11-18", "DINNER", "DISH"],
+    ]);
+    expect(parsed.shopping.map((s) => [toIsoDate(s.date), s.label])).toEqual([
+      ["2026-11-17", "Lardons"],
+      ["2026-11-18", "Pain de mie"],
+      ["2026-11-17", "Gruyère"],
+    ]);
   });
 });
