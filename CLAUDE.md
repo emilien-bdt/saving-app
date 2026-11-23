@@ -8,8 +8,11 @@ Elle doit être **plus simple et plus rapide qu'Excel** : saisir une dépense do
 
 Modules prévus (par ordre de priorité) :
 1. **Finances** (MVP) : comptes, transactions, catégories, budgets mensuels, tableau de bord
-2. **Repas** : planning de la semaine, recettes, liste de courses
-3. *(plus tard)* : [à compléter : santé, tâches, abonnements, objectifs…]
+2. **To do** : tâches, échéances, priorité, listes (en place depuis le 23/11/2026)
+3. **Repas** : planning de la semaine, recettes, liste de courses
+4. *(plus tard)* : [à compléter : santé, abonnements, objectifs…]
+
+L'**Accueil** (`/`) réunit le menu de toutes les apps et un tableau de bord fait d'un widget par module.
 
 ## Utilisateur
 - Un seul utilisateur : moi (pas de multi-comptes au départ, mais une authentification simple pour protéger mes données)
@@ -32,6 +35,8 @@ Modules prévus (par ordre de priorité) :
 - Un module = `src/modules/<nom>` (`domain/` logique pure testée, `data/` accès Prisma, `actions/` Server Actions + Zod, `components/`, `module.ts`) + son fichier `prisma/schema/<nom>.prisma` + une ligne dans `src/modules/registry.ts`.
 - Les fichiers de `src/app` restent fins : ils importent depuis les modules.
 - Ajouter un module ne doit pas obliger à modifier les autres.
+- Accueil (`src/modules/hub`, pas un module) : tuiles des apps + widgets du registre (`AppModule.widget`, Server Component async facultatif, défini dans `components/home-widget.tsx` du module). Le registre importe donc du code serveur : **jamais importé côté client** ; la navigation reçoit des `NavApp` via `getNavApps()` (`src/modules/navigation.tsx`).
+- Navigation commune `src/shared/navigation/module-nav.tsx` : chaque module fournit ses liens et son bouton « + » (barre haute + sélecteur d'app sur ordinateur, onglets « Accueil » + module sur iPhone).
 - Base : tables préfixées par module (`finances_*`) ; dates calendaires en `@db.Date` (objets `Date` à minuit UTC, cf. `domain/period.ts`) ; règles métier doublées par des contraintes CHECK (ou triggers quand la règle lit une autre ligne) écrites à la main dans le SQL des migrations (à conserver dans les migrations futures).
 - Auth (`src/shared/auth`) : `src/proxy.ts` redirige vers `/login` toute requête sans session valide ; **chaque Server Action commence par `await requireSession()`** (les actions sont des endpoints POST publics).
 
@@ -89,3 +94,6 @@ Modules prévus (par ordre de priorité) :
 - 16/11/2026 — Comptes : trois blocs **Courant / Épargne / Pockets**, chacun avec son propre total (un pocket ne s'ajoute plus à son compte ni à l'Épargne) ; affichés dans Piloter (carte Comptes + indicateur Pockets), pas d'onglet ni de page de détail par compte. Gestion dans Paramètres › Comptes (ajouter, modifier, archiver/désarchiver, supprimer si inutilisé, ordre ↑↓). Un nouveau compte démarre à 0 € à sa date de création ; le solde initial n'est jamais modifiable, le solde n'évolue que par des opérations et virements. Pockets sur un seul niveau (trigger SQL `finances_account_pocket_depth`) ; type d'un pocket sans effet (stocké `SAVINGS`).
 - 16/11/2026 — Intérêts journaliers (épargne Revolut, étape 8) : comptes d'épargne uniquement (pas les pockets) ; taux annuel historisé par compte (table `finances_interest_rate`, `rateBp` en points de base, unique compte + date, « à partir du », modifiable même dans le passé, même date = remplacé, 0 = arrêt) ; calcul dans `domain/interest.ts`, injecté comme transactions calculées (`computed`, jamais en base, jamais « à pointer », non modifiables) dans Piloter et le Journal ; intérêts calculés à la volée (jamais stockés, comme les soldes) : chaque jour, solde de fin de journée × taux / 365, **arrondi au centime chaque jour**, ajouté au solde du lendemain ; rien si solde ≤ 0 ; jusqu'à hier = Actuel, jusqu'à fin de mois = Prévisionnel ; une ligne calculée « Intérêts » par mois et par compte, comptée comme revenu dans la Tendance. Aucun intérêt saisi dans l'Excel (pas de doublon à gérer).
 - 17/11/2026 — Déploiement sur mon serveur (au lieu de Vercel + Neon) : `save.emilienbourdet.fr` ; image Next.js `standalone` (`Dockerfile` multi-étapes) ; `docker-compose.prod.yml` = `save-db` (Postgres 17, aucun port publié) + `save-migrate` (`prisma migrate deploy` à chaque démarrage) + `save-app` (rejoint le réseau Docker du conteneur nginx, `PROXY_NETWORK`) ; vhost nginx + certbot fournis dans `deploy/nginx/` ; transfert par zip (sans `CLAUDE.md` ni `Claude outputs`) ; base initiale = `pg_dump` de la base locale ; sauvegarde quotidienne `deploy/backup.sh`.
+- 23/11/2026 — Accueil `/` = menu des apps + tableau de bord (un widget par module, rien de spécifique à un module dans l'Accueil) ; plus de redirection vers Finances ; la PWA s'ouvre sur `/`. Pas de « + » sur l'Accueil (chaque module a le sien).
+- 23/11/2026 — Module **To do** (`/todo`, tables `todo_*`) : tâche = titre, note facultative, échéance facultative (`@db.Date`), priorité normale / haute, liste facultative, `completedAt` (null = à faire) ; listes = nom unique (insensible à la casse), couleur, ordre ; supprimer une liste garde ses tâches (sans liste). Page groupée En retard / Aujourd'hui / Demain / Cette semaine (≤ 7 j) / Plus tard / Sans date ; tri : prioritaire, puis échéance, puis ancienneté. Nouvelle tâche = aujourd'hui, sans liste ; « Ajouter et continuer » par défaut. Pas de sous-tâches ni de récurrence pour l'instant.
+- 23/11/2026 — Widgets : Finances = total, tendance, dépenses du mois en cours (réel + prévu) ; To do = tâches en retard + du jour, cochables depuis l'Accueil, et nombre à venir sous 7 jours.
