@@ -1,0 +1,59 @@
+// Module Repas. Dates are calendar dates (@db.Date, UTC-midnight Date objects).
+// CHECK constraints live in the migration SQL:
+// - DISH / LEFTOVER ⇒ dishId NOT NULL ; OUT ⇒ dishId NULL AND label NOT NULL ;
+// - non-empty dish name / key; label and note lengths.
+
+enum RepasSlot {
+  LUNCH
+  DINNER
+}
+
+enum RepasMealKind {
+  /// Cooked at home.
+  DISH
+  /// Leftover of a dish cooked earlier (dishId = the cooked dish).
+  LEFTOVER
+  /// Nobody eats at home: "Absent", "Restaurant…", "Chez maman"…
+  OUT
+}
+
+enum RepasMealStatus {
+  /// Proposed (by hand or by the generator): may be regenerated.
+  PROPOSED
+  /// Locked: the generator never touches it.
+  VALIDATED
+}
+
+model RepasDish {
+  id        String      @id @default(cuid())
+  name      String
+  /// Normalised name (domain/dish-key.ts), unique: "Pâtes carbo" = "pates carbo".
+  key       String      @unique
+  /// Archived dishes are never proposed by the generator.
+  archived  Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  meals     RepasMeal[]
+
+  @@map("repas_dish")
+}
+
+model RepasMeal {
+  id        String          @id @default(cuid())
+  date      DateTime        @db.Date
+  slot      RepasSlot
+  kind      RepasMealKind
+  dishId    String?
+  dish      RepasDish?      @relation(fields: [dishId], references: [id], onDelete: Restrict)
+  label     String?
+  note      String?
+  status    RepasMealStatus @default(PROPOSED)
+  /// Set by the Excel import ("excel:2026-03-24:LUNCH"): re-import is idempotent.
+  importRef String?         @unique
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([date, slot])
+  @@index([dishId])
+  @@map("repas_meal")
+}
