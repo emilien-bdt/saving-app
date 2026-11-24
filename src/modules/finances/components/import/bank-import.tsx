@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useRef, useState, useTransition } from "react";
 import { Button } from "@/shared/ui/button";
 import { ios } from "@/shared/ui/ios";
-import { applyRevolutImport, previewRevolutImport, type RevolutPreview } from "../../actions/revolut-import";
-import type { RevolutImportResult } from "../../data/revolut-import";
-import type { CategorySource } from "../../import/revolut/categories";
-import type { PlannedOperation } from "../../import/revolut/plan";
+import { applyBankImport, type BankPreview, previewBankImport } from "../../actions/bank-import";
+import type { BankImportResult } from "../../data/bank-import";
+import type { CategorySource } from "../../import/bank/categories";
+import type { PlannedOperation } from "../../import/bank/plan";
 import type { AccountOption, CategoryOption } from "../../view-models";
 import { formatDateFr, formatTransactionAmount } from "../format";
 
@@ -23,6 +23,22 @@ const SOURCE_BADGE: Record<CategorySource, { text: string; className: string } |
 };
 
 const shortDate = (iso: string) => formatDateFr(iso).slice(0, 5);
+
+/** Text of the file: UTF-8 (Revolut, BoursoBank), else Windows-1252 (older exports). */
+async function readText(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+  } catch {
+    return new TextDecoder("windows-1252").decode(buffer);
+  }
+}
+
+const FORMAT_LABELS: Record<BankPreview["format"], string> = {
+  revolut: "Revolut",
+  "revolut-savings": "Revolut, relevé d'épargne",
+  boursobank: "BoursoBank",
+};
 
 function plural(count: number, one: string, many: string) {
   return `${count} ${count > 1 ? many : one}`;
@@ -85,25 +101,25 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-/** Finances › Importer: Revolut CSV → preview (to tick, categories to check) → import. */
-export function RevolutImport({ accounts, categories }: Props) {
+/** Finances › Importer: bank CSV (Revolut, BoursoBank) → preview (to tick, categories to check) → import. */
+export function BankImport({ accounts, categories }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<LoadedFile | null>(null);
-  const [preview, setPreview] = useState<RevolutPreview | null>(null);
+  const [preview, setPreview] = useState<BankPreview | null>(null);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [chosenCategories, setChosenCategories] = useState<Record<string, string>>({});
   const [kept, setKept] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RevolutImportResult | null>(null);
+  const [result, setResult] = useState<BankImportResult | null>(null);
   const [pending, startTransition] = useTransition();
 
   const accountName = (id: string | null) => accounts.find((account) => account.id === id)?.displayName ?? "?";
   const activeAccounts = accounts.filter((account) => !account.archived);
 
-  const loadPreview = (loaded: LoadedFile, productAccounts?: Record<string, string | null>) =>
+  const loadPreview = (loaded: LoadedFile, productAccounts?: Record<string, string | null>, fromDate?: string | null) =>
     startTransition(async () => {
-      const response = await previewRevolutImport({ csv: loaded.text, fileName: loaded.name, productAccounts });
+      const response = await previewBankImport({ csv: loaded.text, fileName: loaded.name, productAccounts, fromDate });
       if (!response.ok) {
         setError(response.error);
         setPreview(null);
@@ -115,7 +131,7 @@ export function RevolutImport({ accounts, categories }: Props) {
 
   const onFile = async (selected: File | undefined) => {
     if (!selected) return;
-    const loaded = { name: selected.name, text: await selected.text() };
+    const loaded = { name: selected.name, text: await readText(selected) };
     setFile(loaded);
     setResult(null);
     setSkipped(new Set());
@@ -154,10 +170,11 @@ export function RevolutImport({ accounts, categories }: Props) {
   const apply = () => {
     if (!file || !preview) return;
     startTransition(async () => {
-      const response = await applyRevolutImport({
+      const response = await applyBankImport({
         csv: file.text,
         fileName: file.name,
         productAccounts: preview.productAccounts,
+        fromDate: preview.fromDate,
         skippedRefs: [...skipped],
         categories: Object.fromEntries(
           creates.filter((operation) => chosenCategories[operation.ref]).map((operation) => [operation.ref, categoryOf(operation)]),
@@ -242,8 +259,10 @@ export function RevolutImport({ accounts, categories }: Props) {
       {!preview ? (
         <section className={`${ios.cardPad} space-y-3`}>
           <p className="text-[15px]">
-            Dans l&apos;app Revolut : <strong>Accueil › Comptes</strong>, choisis le compte, puis <strong>⋯ › Relevé</strong>, format{" "}
-            <strong>Excel</strong> (le fichier est un CSV). Le relevé de toute la banque contient le compte courant et l&apos;épargne.
+            <strong>Revolut</strong> : Accueil › Comptes, choisis le compte, puis ⋯ › Relevé, format Excel (le fichier est un CSV).
+          </p>
+          <p className="text-[15px]">
+            <strong>BoursoBank</strong> : Mes comptes › le compte › Exporter les opérations, format CSV.
           </p>
           <p className={ios.hint}>
             Rien n&apos;est enregistré avant ta validation. Les opérations déjà saisies à la main sont reconnues (même compte, même
@@ -277,7 +296,7 @@ export function RevolutImport({ accounts, categories }: Props) {
                 <p className="truncate font-semibold">{file.name}</p>
                 <p className={ios.hint}>
                   {preview.period ? `Du ${formatDateFr(preview.period.from)} au ${formatDateFr(preview.period.to)}` : "Aucune opération"}
-                  {preview.format === "revolut-savings" ? " · relevé d'épargne" : ""}
+                  {` · ${FORMAT_LABELS[preview.format]}`}
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={reset} disabled={pending}>
@@ -307,7 +326,7 @@ export function RevolutImport({ accounts, categories }: Props) {
                     aria-label={`Compte pour ${product.product}`}
                     disabled={pending}
                     onChange={(event) =>
-                      loadPreview(file, { ...preview.productAccounts, [product.product]: event.target.value || null })
+                      loadPreview(file, { ...preview.productAccounts, [product.product]: event.target.value || null }, preview.fromDate)
                     }
                     className="h-9 max-w-[55%] rounded-lg bg-muted px-2 text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
@@ -320,6 +339,22 @@ export function RevolutImport({ accounts, categories }: Props) {
                   </select>
                 </li>
               ))}
+              <li className={ios.row}>
+                <label htmlFor="import-from" className="min-w-0 flex-1">
+                  <span className="block">À partir du</span>
+                  <span className={ios.hint}>Les opérations plus anciennes sont ignorées</span>
+                </label>
+                <input
+                  id="import-from"
+                  type="date"
+                  value={preview.fromDate ?? ""}
+                  min={preview.period?.from}
+                  max={preview.period?.to}
+                  disabled={pending}
+                  onChange={(event) => loadPreview(file, preview.productAccounts, event.target.value || null)}
+                  className="h-9 rounded-lg bg-muted px-2 text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                />
+              </li>
             </ul>
           </section>
 

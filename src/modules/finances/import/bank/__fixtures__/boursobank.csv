@@ -1,0 +1,10 @@
+﻿"Date Opération";"Date Valeur";Libellé;"Libellé Suggéré";Catégorie;"Catégorie Parente";Solde;Commentaire;"Numéro Compte";"Libellé Compte";Solde;Pointage
+2026-10-30;2026-10-30;"CARTE 29/10/26 APPLE.COM/BILL CB*0015";Apple;"Vie quotidienne";"Vie quotidienne";-9,99;;00012345678;BoursoBank;1945.4;Non
+2026-10-29;2026-10-29;"CARTE 27/10/26 SUPER U CB*0015";"Super U";Alimentation;"Vie quotidienne";-47,10;;00012345678;BoursoBank;1955.39;Non
+2026-10-28;2026-10-28;"PRLV SEPA ORANGE SA";Orange;"Téléphonie (fixe et mobile)";"Abonnements & téléphonie";-19,99;;00012345678;BoursoBank;2002.49;Non
+2026-10-27;2026-10-27;"VIR SEPA JEAN DUPONT";"Vir Sepa Jean Dupont";"Virements reçus";"Virements reçus";150,00;;00012345678;BoursoBank;2022.48;Non
+2026-10-26;2026-10-26;"CARTE 25/10/26 TOTALENERGIES CB*0015";TotalEnergies;Carburant;"Auto & Moto";-60,00;;00012345678;BoursoBank;1872.48;Non
+2026-10-25;2026-10-25;"CARTE 24/10/26 LE PETIT BISTROT CB*0015";*Paiement;"Restaurants, bars, discothèques…";"Loisirs & sorties";-23,50;;00012345678;BoursoBank;1932.48;Non
+2026-10-25;2026-10-25;"CARTE 24/10/26 LE PETIT BISTROT CB*0015";*Paiement;"Restaurants, bars, discothèques…";"Loisirs & sorties";-23,50;;00012345678;BoursoBank;1955.98;Non
+2026-10-24;2026-10-24;"VIR INST AMAZON PAYMENTS";"Vir Inst Amazon Payments";"Achats en ligne";"Achats & shopping";-1029,90;;00012345678;BoursoBank;1979.48;Non
+2021-06-25;2021-06-25;"VIR VIREMENT CREATION COMPTE";"Vir Virement Creation Compte";"Virements reçus";"Virements reçus";10,00;;00012345678;BoursoBank;30.29;Non

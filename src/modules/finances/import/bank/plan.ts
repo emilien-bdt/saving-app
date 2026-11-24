@@ -3,15 +3,27 @@ import { normalizeLabel } from "../../domain/labels";
 import type { LabelSuggestion } from "../../domain/suggestions";
 import type { AccountType, TransactionStatus, TransactionType } from "../../domain/types";
 import { type CategorySource, guessCategory, type ImportCategory } from "./categories";
-import { cleanRevolutLabel } from "./labels";
-import type { RevolutRow } from "./parse";
+import { cleanBankLabel } from "./labels";
+import type { BankSource, StatementRow } from "./statement";
 
-export const REVOLUT_REF_PREFIX = "revolut:";
+/** importRef of an operation imported from a bank statement: « revolut:<hash> », « boursobank:<hash> ». */
+export const BANK_REF_PREFIXES: Record<BankSource, string> = { REVOLUT: "revolut:", BOURSOBANK: "boursobank:" };
+
+export const isBankRef = (ref: string | null | undefined): boolean =>
+  ref !== null && ref !== undefined && Object.values(BANK_REF_PREFIXES).some((prefix) => ref.startsWith(prefix));
 
 /** Days between the bank date and a manual entry for them to be the same operation. */
 export const MATCH_WINDOW_DAYS = 3;
 
-export type ImportAccount = { id: string; name: string; type: AccountType; parentId: string | null; archived: boolean };
+export type ImportAccount = {
+  id: string;
+  name: string;
+  type: AccountType;
+  parentId: string | null;
+  archived: boolean;
+  /** Start of the account in Save (« AAAA-MM-JJ »): older rows are ignored (they would shift its balance). */
+  openedIso?: string | null;
+};
 
 export type ExistingTransaction = {
   id: string;
@@ -28,11 +40,14 @@ export type ExistingTransaction = {
 
 export type PlanContext = {
   userId: string;
+  source: BankSource;
   accounts: readonly ImportAccount[];
-  /** Revolut product → account receiving its rows (null: rows ignored). */
+  /** Bank product → account receiving its rows (null: rows ignored). */
   productAccounts: Readonly<Record<string, string | null>>;
   /** The user's transactions around the period of the file, and those carrying one of its references. */
   existing: readonly ExistingTransaction[];
+  /** Rows before this date (« AAAA-MM-JJ ») are ignored. */
+  fromDate?: string | null;
   suggestions: readonly LabelSuggestion[];
   categories: readonly ImportCategory[];
 };
@@ -40,7 +55,7 @@ export type PlanContext = {
 /**
  * create: new operation; link: already typed by hand → gets the bank reference and is cleared;
  * clear: imported while pending, now completed; unchanged: already imported;
- * duplicate: already imported from another file (e.g. the savings statement).
+ * duplicate: already imported from another file (e.g. the Revolut savings statement).
  */
 export type OperationAction = "create" | "link" | "clear" | "unchanged" | "duplicate";
 
@@ -76,7 +91,8 @@ export type SkippedRow = { line: number; dateIso: string; description: string; a
 
 export type ProductSummary = { product: string; rowCount: number; accountId: string | null };
 
-export type RevolutImportPlan = {
+export type BankImportPlan = {
+  source: BankSource;
   products: ProductSummary[];
   operations: PlannedOperation[];
   removals: PlannedRemoval[];
@@ -106,10 +122,15 @@ function mentionedAccounts(text: string, accounts: readonly ImportAccount[]): Im
 }
 
 /**
- * Account proposed for each product of the file: the current account for « Valeur actuelle »,
- * the savings account named in the descriptions (or the only one) for « Dépôt », a pocket of the same name otherwise.
+ * Account proposed for each product of the file: the current account for « Valeur actuelle » (Revolut),
+ * the savings account named in the descriptions (or the only one) for « Dépôt », an account of the same name
+ * otherwise (pocket, « BoursoBank »), or an account named « …Bourso… » for a BoursoBank file.
  */
-export function defaultProductAccounts(rows: readonly RevolutRow[], accounts: readonly ImportAccount[]): Record<string, string | null> {
+export function defaultProductAccounts(
+  rows: readonly StatementRow[],
+  accounts: readonly ImportAccount[],
+  source: BankSource = "REVOLUT",
+): Record<string, string | null> {
   const result: Record<string, string | null> = {};
   const products = [...new Set(rows.map((row) => row.product))];
   for (const product of products) {
@@ -127,21 +148,26 @@ export function defaultProductAccounts(rows: readonly RevolutRow[], accounts: re
     } else {
       account = accounts.find((candidate) => !candidate.archived && normalizeLabel(candidate.name) === productKey) ?? null;
     }
+    if (!account && source === "BOURSOBANK") {
+      account = accounts.find((candidate) => !candidate.archived && normalizeLabel(candidate.name).includes("bourso")) ?? null;
+    }
     result[product] = account?.id ?? null;
   }
   return result;
 }
 
-function makeRef(userId: string, identity: string): string {
-  return REVOLUT_REF_PREFIX + createHash("sha256").update(`${userId}|${identity}`).digest("hex").slice(0, 32);
+function makeRef(source: BankSource, userId: string, identity: string): string {
+  return BANK_REF_PREFIXES[source] + createHash("sha256").update(`${userId}|${identity}`).digest("hex").slice(0, 32);
 }
+
+const frenchDate = (iso: string) => iso.split("-").reverse().join("/");
 
 const dayNumber = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86_400_000;
 
-type Candidate = { row: RevolutRow; accountId: string; ref: string };
+type Candidate = { row: StatementRow; accountId: string; ref: string };
 
 /** Builds what the import would do; nothing is written. */
-export function planRevolutImport(rows: readonly RevolutRow[], context: PlanContext): RevolutImportPlan {
+export function planBankImport(rows: readonly StatementRow[], context: PlanContext): BankImportPlan {
   const accountsById = new Map(context.accounts.map((account) => [account.id, account]));
   const byRef = new Map(context.existing.filter((item) => item.importRef).map((item) => [item.importRef as string, item]));
   const skipped: SkippedRow[] = [];
@@ -158,19 +184,26 @@ export function planRevolutImport(rows: readonly RevolutRow[], context: PlanCont
     accountId: context.productAccounts[product] ?? null,
   }));
 
-  const skip = (row: RevolutRow, reason: string) =>
+  const openedBefore = (accountId: string, dateIso: string) => {
+    const opened = accountsById.get(accountId)?.openedIso;
+    return Boolean(opened && dateIso < opened);
+  };
+  const skip = (row: StatementRow, reason: string) =>
     skipped.push({ line: row.line, dateIso: row.dateIso, description: row.description, amountCents: row.amountCents, reason });
 
   for (const row of rows) {
     const identity = `${row.product}|${row.startedAt}|${row.description}|${row.amountCents}`;
     const occurrence = (occurrences.get(identity) ?? 0) + 1;
     occurrences.set(identity, occurrence);
-    const ref = makeRef(context.userId, `${identity}|${occurrence}`);
+    const ref = makeRef(context.source, context.userId, `${identity}|${occurrence}`);
     const accountId = context.productAccounts[row.product] ?? null;
 
     if (row.currency !== "EUR") skip(row, `Devise ${row.currency} non gérée`);
     else if (!accountId || !accountsById.has(accountId)) skip(row, `Aucun compte choisi pour « ${row.product} »`);
-    else if (row.kind === "INTEREST") skip(row, "Intérêts : déjà calculés par l'app");
+    else if (context.fromDate && row.dateIso < context.fromDate) skip(row, `Avant le ${frenchDate(context.fromDate)}`);
+    else if (openedBefore(accountId, row.dateIso)) {
+      skip(row, `Avant l'ouverture du compte dans Save (${frenchDate(accountsById.get(accountId)?.openedIso ?? "")})`);
+    } else if (row.kind === "INTEREST") skip(row, "Intérêts : déjà calculés par l'app");
     else if (row.state === "UNKNOWN") skip(row, `État « ${row.stateLabel} » inconnu`);
     else if (row.amountCents === 0) skip(row, "Montant nul");
     else if (row.state === "CANCELLED") {
@@ -250,8 +283,8 @@ export function planRevolutImport(rows: readonly RevolutRow[], context: PlanCont
     }
 
     const type: TransactionType = row.amountCents < 0 ? "EXPENSE" : "INCOME";
-    const label = cleanRevolutLabel(row.description);
-    const guess = guessCategory(label, type === "EXPENSE" ? "EXPENSE" : "INCOME", context.suggestions, context.categories);
+    const label = cleanBankLabel(row.description, row.merchant);
+    const guess = guessCategory(label, type === "EXPENSE" ? "EXPENSE" : "INCOME", context.suggestions, context.categories, row.bankCategory);
     addDraft({
       ref: candidate.ref,
       lines: [row.line],
@@ -306,7 +339,7 @@ export function planRevolutImport(rows: readonly RevolutRow[], context: PlanCont
     if (match) claimed.add(match.id);
     operations.push({
       ...draft,
-      action: !match ? "create" : match.importRef?.startsWith(REVOLUT_REF_PREFIX) ? "duplicate" : "link",
+      action: !match ? "create" : isBankRef(match.importRef) ? "duplicate" : "link",
       existing: match ? { id: match.id, label: match.label, dateIso: match.dateIso, status: match.status } : null,
     });
   }
@@ -320,7 +353,7 @@ export function planRevolutImport(rows: readonly RevolutRow[], context: PlanCont
       if (
         !claimed.has(item.id) &&
         item.status === "PLANNED" &&
-        item.importRef?.startsWith(REVOLUT_REF_PREFIX) &&
+        isBankRef(item.importRef) &&
         (fileAccounts.has(item.accountId) || (item.toAccountId !== null && fileAccounts.has(item.toAccountId))) &&
         item.dateIso >= period.from &&
         item.dateIso <= period.to
@@ -338,5 +371,5 @@ export function planRevolutImport(rows: readonly RevolutRow[], context: PlanCont
   }
 
   operations.sort((a, b) => b.dateIso.localeCompare(a.dateIso) || (a.lines[0] ?? 0) - (b.lines[0] ?? 0));
-  return { products, operations, removals, skipped, period };
+  return { source: context.source, products, operations, removals, skipped, period };
 }

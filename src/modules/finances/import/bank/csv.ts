@@ -1,10 +1,12 @@
 /**
- * Minimal RFC 4180 CSV reader (no dependency): comma separator, double-quoted
- * fields with "" escapes, LF or CRLF line ends, optional UTF-8 BOM.
- * Empty lines are dropped.
+ * Minimal RFC 4180 CSV reader (no dependency): double-quoted fields with "" escapes,
+ * LF or CRLF line ends, optional UTF-8 BOM. Empty lines are dropped.
+ * The separator is « , » (Revolut) or « ; » (BoursoBank): the one most present in the first line.
  */
-export function parseCsv(text: string): string[][] {
+export function parseCsv(text: string, separator?: "," | ";"): string[][] {
   const input = text.startsWith("﻿") ? text.slice(1) : text;
+  const firstLine = input.slice(0, input.search(/\r?\n|$/));
+  const delimiter = separator ?? (firstLine.split(";").length > firstLine.split(",").length ? ";" : ",");
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
@@ -29,7 +31,7 @@ export function parseCsv(text: string): string[][] {
       continue;
     }
     if (char === '"') quoted = true;
-    else if (char === ",") {
+    else if (char === delimiter) {
       row.push(field);
       field = "";
     } else if (char === "\n") endRow();

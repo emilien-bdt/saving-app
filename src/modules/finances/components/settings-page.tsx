@@ -28,7 +28,7 @@ export async function SettingsPage() {
       <div className={ios.group}>
         <Link href="/finances/import" className={ios.rowButton}>
           <FileUp className="size-5 text-primary" aria-hidden />
-          <span className="flex-1">Importer un relevé Revolut</span>
+          <span className="flex-1">Importer un relevé bancaire</span>
           <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
       </div>

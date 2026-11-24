@@ -62,4 +62,5 @@ next-env.d.ts
 
 # Relevés bancaires réels (CSV) : jamais commités (exemples anonymisés seulement)
 *.csv
+*.CSV
 !src/**/__fixtures__/*.csv

@@ -1,20 +1,26 @@
 import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { normalizeLabel } from "../domain/labels";
-import type { RevolutRow } from "../import/revolut/parse";
-import { type ExistingTransaction, type PlanContext, REVOLUT_REF_PREFIX, type RevolutImportPlan } from "../import/revolut/plan";
+import { BANK_REF_PREFIXES, type BankImportPlan, type ExistingTransaction, type PlanContext } from "../import/bank/plan";
+import type { BankSource, StatementRow } from "../import/bank/statement";
 import { getTransactionFormOptions } from "./form-options";
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 const shiftDays = (iso: string, days: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * 86_400_000);
 
 /** Everything the plan needs: accounts, categories, label history and the transactions around the period of the file. */
-export async function loadRevolutPlanContext(
-  rows: readonly RevolutRow[],
+export async function loadBankPlanContext(
+  rows: readonly StatementRow[],
+  source: BankSource,
   productAccounts: Record<string, string | null>,
+  fromDate: string | null,
 ): Promise<PlanContext> {
   const { userId } = await requireSession();
-  const { accounts, categories, suggestions } = await getTransactionFormOptions();
+  const [{ accounts, categories, suggestions }, openings] = await Promise.all([
+    getTransactionFormOptions(),
+    db.account.findMany({ where: { userId }, select: { id: true, initialBalanceDate: true } }),
+  ]);
+  const opened = new Map(openings.map((account) => [account.id, isoDate(account.initialBalanceDate)]));
   const dates = rows.map((row) => row.dateIso).sort();
   const first = dates[0];
   const last = dates[dates.length - 1];
@@ -42,12 +48,15 @@ export async function loadRevolutPlanContext(
 
   return {
     userId,
+    source,
+    fromDate,
     accounts: accounts.map((account) => ({
       id: account.id,
       name: account.name,
       type: account.type,
       parentId: account.parentId,
       archived: account.archived,
+      openedIso: opened.get(account.id) ?? null,
     })),
     productAccounts,
     existing,
@@ -58,7 +67,7 @@ export async function loadRevolutPlanContext(
   };
 }
 
-export type RevolutImportDecisions = {
+export type BankImportDecisions = {
   /** References of the operations the user unticked. */
   skippedRefs: ReadonlySet<string>;
   /** Category chosen in the preview, by reference. */
@@ -67,16 +76,16 @@ export type RevolutImportDecisions = {
   keptIds: ReadonlySet<string>;
 };
 
-export type RevolutImportResult = { created: number; linked: number; cleared: number; removed: number };
+export type BankImportResult = { created: number; linked: number; cleared: number; removed: number };
 
-export class RevolutImportError extends Error {}
+export class BankImportError extends Error {}
 
 /** Writes the plan in one database transaction (new operations in one import batch, which can be undone). */
-export async function applyRevolutPlan(
-  plan: RevolutImportPlan,
-  decisions: RevolutImportDecisions,
+export async function applyBankPlan(
+  plan: BankImportPlan,
+  decisions: BankImportDecisions,
   fileName: string,
-): Promise<RevolutImportResult> {
+): Promise<BankImportResult> {
   const { userId } = await requireSession();
   const categories = await db.category.findMany({
     where: { userId, archivedAt: null, children: { none: {} } },
@@ -91,7 +100,7 @@ export async function applyRevolutPlan(
       if (operation.type === "TRANSFER") return { ...operation, categoryId: null };
       const categoryId = decisions.categories.get(operation.ref) ?? operation.categoryId;
       if (!categoryId || categoryKinds.get(categoryId) !== operation.type) {
-        throw new RevolutImportError(`Choisis une catégorie pour « ${operation.label} » du ${operation.dateIso.split("-").reverse().join("/")}`);
+        throw new BankImportError(`Choisis une catégorie pour « ${operation.label} » du ${operation.dateIso.split("-").reverse().join("/")}`);
       }
       return { ...operation, categoryId };
     });
@@ -102,7 +111,7 @@ export async function applyRevolutPlan(
     async (tx) => {
       if (creates.length > 0) {
         const batch = await tx.importBatch.create({
-          data: { userId, fileName, source: "REVOLUT", rowCount: creates.length },
+          data: { userId, fileName, source: plan.source, rowCount: creates.length },
         });
         await tx.transaction.createMany({
           data: creates.map((operation) => ({
@@ -147,7 +156,7 @@ export async function applyRevolutPlan(
                 id: { in: removals.map((removal) => removal.id) },
                 userId,
                 status: "PLANNED",
-                importRef: { startsWith: REVOLUT_REF_PREFIX },
+                OR: Object.values(BANK_REF_PREFIXES).map((prefix) => ({ importRef: { startsWith: prefix } })),
               },
             })
           : { count: 0 };
@@ -158,13 +167,13 @@ export async function applyRevolutPlan(
   );
 }
 
-export type RevolutImportBatch = { id: string; fileName: string; importedAtIso: string; rowCount: number; remaining: number };
+export type BankImportBatch = { id: string; fileName: string; importedAtIso: string; rowCount: number; remaining: number };
 
-/** The last Revolut imports (the Excel ones are not undone from the app). */
-export async function listRevolutImports(limit = 10): Promise<RevolutImportBatch[]> {
+/** The last bank statement imports (the Excel ones are not undone from the app). */
+export async function listBankImports(limit = 10): Promise<BankImportBatch[]> {
   const { userId } = await requireSession();
   const batches = await db.importBatch.findMany({
-    where: { userId, source: "REVOLUT" },
+    where: { userId, source: { not: "EXCEL" } },
     orderBy: { importedAt: "desc" },
     take: limit,
     select: { id: true, fileName: true, importedAt: true, rowCount: true, _count: { select: { transactions: true } } },
@@ -178,9 +187,9 @@ export async function listRevolutImports(limit = 10): Promise<RevolutImportBatch
   }));
 }
 
-/** Deletes a Revolut import and the operations it created. Returns false when it no longer exists. */
-export async function deleteRevolutImport(id: string): Promise<boolean> {
+/** Deletes a bank statement import and the operations it created. Returns false when it no longer exists. */
+export async function deleteBankImport(id: string): Promise<boolean> {
   const { userId } = await requireSession();
-  const { count } = await db.importBatch.deleteMany({ where: { id, userId, source: "REVOLUT" } });
+  const { count } = await db.importBatch.deleteMany({ where: { id, userId, source: { not: "EXCEL" } } });
   return count > 0;
 }

@@ -3,13 +3,13 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/shared/ui/button";
 import { ios } from "@/shared/ui/ios";
-import { undoRevolutImport } from "../../actions/revolut-import";
-import type { RevolutImportBatch } from "../../data/revolut-import";
+import { undoBankImport } from "../../actions/bank-import";
+import type { BankImportBatch } from "../../data/bank-import";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Paris" });
 
-/** Last Revolut imports; undoing one deletes the operations it created (recognised entries stay pointed). */
-export function ImportHistory({ imports }: { imports: RevolutImportBatch[] }) {
+/** Last bank statement imports; undoing one deletes the operations it created (recognised entries stay pointed). */
+export function ImportHistory({ imports }: { imports: BankImportBatch[] }) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -18,7 +18,7 @@ export function ImportHistory({ imports }: { imports: RevolutImportBatch[] }) {
 
   const undo = (id: string) =>
     startTransition(async () => {
-      const result = await undoRevolutImport(id);
+      const result = await undoBankImport(id);
       setError(result.ok ? null : result.error);
       setConfirming(null);
     });
