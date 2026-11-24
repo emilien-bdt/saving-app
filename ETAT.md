@@ -171,4 +171,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | — | `f8e3fbc` | Design iOS : corrections après contrôle à l'écran (débordement Piloter, boutons Repas) |
 | 19 | `eef8e9e` | Photo des plats (table `repas_dish_photo`, redimensionnement navigateur, route privée versionnée) |
 | 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
-| 21 | _à venir_ | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |
+| 21 | `f68309f` | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |
