@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, ChevronRight, ClipboardCopy, ExternalLink, Plus, RotateCcw, Share2, ShoppingBasket, Undo2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ClipboardCopy, ExternalLink, Plus, RotateCcw, Share2, Undo2, X } from "lucide-react";
 import Link from "next/link";
 import { type CSSProperties, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import {
@@ -198,10 +198,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
             <ChevronLeft className="size-5" aria-hidden />
           </Link>
           <div className="px-1">
-            <h2 className="flex items-center gap-2 text-[17px] font-semibold">
-              <ShoppingBasket className="size-5 shrink-0 text-app-repas" aria-hidden />
-              Courses · {title}
-            </h2>
+            <h2 className="text-[17px] font-semibold">{title}</h2>
             <p className="text-sm font-medium text-muted-foreground">
               {done}/{active.length} pris · d&apos;après <Link href={`/repas?semaine=${week}`} className="underline underline-offset-2">les repas de la semaine</Link>
             </p>

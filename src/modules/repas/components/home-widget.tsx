@@ -74,14 +74,16 @@ export async function CoursesHomeWidget(): Promise<ReactNode> {
       <p className={ios.hint}>Cette semaine</p>
       <p className="text-2xl font-bold tracking-tight">{toBuy === 0 ? "À jour" : `${toBuy} article${toBuy > 1 ? "s" : ""}`}</p>
       <p className={ios.hint}>{toBuy === 0 ? "rien à acheter" : "à acheter"}</p>
-      <div className="mt-auto pt-3">
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className="h-full rounded-full bg-app-repas" style={{ width: `${percent}%` }} />
+      {lines.length > 0 ? (
+        <div className="mt-auto pt-3">
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+            <div className="h-full rounded-full bg-app-repas" style={{ width: `${percent}%` }} />
+          </div>
+          <p className={`${ios.hint} mt-1.5`}>
+            {done} sur {lines.length} dans le panier
+          </p>
         </div>
-        <p className={`${ios.hint} mt-1.5`}>
-          {done} sur {lines.length} dans le panier
-        </p>
-      </div>
+      ) : null}
     </div>
   );
 }

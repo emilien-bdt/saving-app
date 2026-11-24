@@ -10,7 +10,6 @@ import {
   LockOpen,
   Plus,
   RefreshCw,
-  ShoppingBasket,
   Soup,
   Sparkles,
   Trash2,
@@ -199,7 +198,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
           <button
             type="button"
             onClick={() => setEditing({ key, meal: null })}
-            className={`${look.empty} ${isOver ? look.over : ""} flex flex-1 items-center justify-center gap-1.5 text-[15px] font-medium active:opacity-60`}
+            className={`${look.empty} ${isOver ? look.over : ""} flex flex-1 items-center justify-center gap-1.5 text-[15px] font-medium text-primary! active:opacity-60`}
             aria-label={`${label} : ajouter un repas`}
           >
             <Plus className="size-4" aria-hidden />
@@ -275,7 +274,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
           <button
             type="button"
             onClick={() => setEditing({ key, meal: null })}
-            className={`${look.empty} ${isOver ? look.over : ""} flex h-16 w-full items-center justify-center gap-2 text-[15px] font-medium active:opacity-60`}
+            className={`${look.empty} ${isOver ? look.over : ""} flex h-16 w-full items-center justify-center gap-2 text-[15px] font-medium text-primary! active:opacity-60`}
             aria-label={`${label} : choisir un repas`}
           >
             <Plus className="size-4" aria-hidden />
@@ -367,23 +366,19 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
         <p className={`${ios.hint} hidden lg:block`}>
           {validatedCount}/{meals.length} repas validés · pointillés = proposition, cadenas = gardé à la génération
         </p>
-        <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
-          <Link href={`/repas/courses?semaine=${week}`} className={`${look.btn} ${look.btnPlain} ${look.btnSm}`}>
-            <ShoppingBasket className="size-4" aria-hidden />
-            Courses
-          </Link>
+        <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
           {meals.length > 0 ? (
             <button
               type="button"
               disabled={pending}
               onClick={() => run("week", { type: "validateAll", validated: !allValidated }, () => setWeekValidated(week, !allValidated))}
-              className={`${look.btn} ${look.btnPlain} ${look.btnSm}`}
+              className={`${look.btn} ${look.btnPlain} ${look.btnSm} flex-1 sm:flex-none`}
             >
               {allValidated ? <LockOpen className="size-4" aria-hidden /> : <Lock className="size-4" aria-hidden />}
               {allValidated ? "Tout déverrouiller" : "Tout valider"}
             </button>
           ) : null}
-          <button type="button" disabled={pending || (allValidated && meals.length === 14)} onClick={() => generate(null)} className={`${look.btn} ${look.btnSm} ml-auto sm:ml-0`}>
+          <button type="button" disabled={pending || (allValidated && meals.length === 14)} onClick={() => generate(null)} className={`${look.btn} ${look.btnSm} flex-1 sm:flex-none`}>
             <Sparkles className={`size-4 ${busyKey === "week" ? "animate-pulse" : ""}`} aria-hidden />
             {meals.length > validatedCount ? "Regénérer" : "Générer"}
           </button>

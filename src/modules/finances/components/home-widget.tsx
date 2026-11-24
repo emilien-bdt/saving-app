@@ -4,7 +4,7 @@ import { todayIso } from "@/shared/lib/today";
 import { ios } from "@/shared/ui/ios";
 import { getDashboard } from "../data/dashboard";
 import { parseMonthParam } from "../domain/month-param";
-import { formatSignedCents, monthName } from "./format";
+import { formatSignedCents } from "./format";
 
 /** Home widget (half width): total, the month's trend and expenses (same figures as Piloter). */
 export async function FinancesHomeWidget(): Promise<ReactNode> {
@@ -20,7 +20,7 @@ export async function FinancesHomeWidget(): Promise<ReactNode> {
       <p className={ios.hint}>Total</p>
       <p className="truncate text-2xl font-bold tracking-tight tabular-nums">{formatCents(total.clearedCents)}</p>
       <p className={`truncate text-[13px] font-semibold tabular-nums ${trend.clearedCents < 0 ? "text-destructive" : "text-positive"}`}>
-        {formatSignedCents(trend.clearedCents)} en {monthName(month.month)}
+        {formatSignedCents(trend.clearedCents)} ce mois
       </p>
       <div className="mt-auto pt-3">
         <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>

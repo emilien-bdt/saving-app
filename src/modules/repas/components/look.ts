@@ -12,7 +12,7 @@ export const look = {
   mealTitle: "text-[17px] leading-snug font-semibold",
   proposed: "outline-2 -outline-offset-2 outline-dashed outline-warning/50",
   out: "bg-transparent! text-muted-foreground ring-1 ring-input ring-inset before:hidden",
-  empty: "rounded-xl border-2 border-dashed border-input text-primary",
+  empty: "rounded-xl border-2 border-dashed border-input text-muted-foreground",
   over: "ring-2 ring-primary",
   dragging: "opacity-40",
   ghost: "rounded-xl bg-card px-3 py-2 text-[15px] font-semibold shadow-xl ring-1 ring-border",

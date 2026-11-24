@@ -9,7 +9,7 @@ function KpiCard({ label, cents, projectedCents, deltaCents, signed, hint }: Kpi
   const tone = signed ? (cents < 0 ? "text-destructive" : "text-positive") : "";
   const DeltaIcon = deltaCents >= 0 ? TrendingUp : TrendingDown;
   return (
-    <div className="rounded-2xl bg-card p-4">
+    <div className="min-w-0 rounded-2xl bg-card p-4">
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className={`mt-1 text-xl font-semibold sm:text-2xl tabular-nums ${tone}`}>{signed ? formatSignedCents(cents) : formatCents(cents)}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">

@@ -27,7 +27,7 @@ export async function DashboardPage({ searchParams }: Props) {
         <MonthNav month={month} currentMonth={parseMonthParam(undefined, today)} params={{}} />
       </div>
       <KpiCards dashboard={dashboard} />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ExpensesCard dashboard={dashboard} monthParam={monthParam} />
         <AccountsCard dashboard={dashboard} />
         <HistoryChart history={dashboard.history} />
