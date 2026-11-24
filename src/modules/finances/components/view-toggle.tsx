@@ -25,14 +25,14 @@ export function ViewToggle({ view }: { view: TransactionView }) {
   };
 
   return (
-    <div className="inline-flex rounded-lg border p-0.5" role="group" aria-label="Affichage">
+    <div className="inline-flex rounded-[10px] bg-black/[0.06] p-0.5 dark:bg-white/[0.1]" role="group" aria-label="Affichage">
       {OPTIONS.map((option) => (
         <button
           key={option.view}
           type="button"
           aria-pressed={view === option.view}
           onClick={() => select(option.param)}
-          className="rounded-md px-3 py-1 text-sm aria-pressed:bg-muted aria-pressed:font-medium"
+          className="rounded-[8px] px-3 py-1 text-[13px] font-medium aria-pressed:bg-card aria-pressed:font-semibold aria-pressed:shadow-sm dark:aria-pressed:bg-input"
         >
           {option.label}
         </button>

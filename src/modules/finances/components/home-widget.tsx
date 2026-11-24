@@ -1,46 +1,34 @@
 import type { ReactNode } from "react";
 import { formatCents } from "@/shared/lib/money";
 import { todayIso } from "@/shared/lib/today";
+import { ios } from "@/shared/ui/ios";
 import { getDashboard } from "../data/dashboard";
 import { parseMonthParam } from "../domain/month-param";
 import { formatSignedCents, monthName } from "./format";
 
-function Figure({ label, value, tone = "", hint }: { label: string; value: string; tone?: string; hint: string | null }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 truncate text-lg font-semibold tabular-nums sm:text-xl ${tone}`}>{value}</p>
-      {hint ? <p className="truncate text-xs text-muted-foreground tabular-nums">{hint}</p> : null}
-    </div>
-  );
-}
-
-/** Home widget: total, the month's trend and expenses (current month, same figures as Piloter). */
+/** Home widget (half width): total, the month's trend and expenses (same figures as Piloter). */
 export async function FinancesHomeWidget(): Promise<ReactNode> {
   const month = parseMonthParam(undefined, todayIso());
   const { dashboard } = await getDashboard(month);
   const { total, trend, expense } = dashboard;
-  const planned = (projected: number, current: number, format: (cents: number) => string) =>
-    projected !== current ? `Prévu : ${format(projected)}` : null;
+  const spent = expense.clearedCents;
+  const planned = Math.max(expense.projectedCents, spent);
+  const percent = planned === 0 ? 0 : Math.round((spent / planned) * 100);
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">
-        {monthName(month.month).replace(/^./, (letter) => letter.toUpperCase())} {month.year}
+    <div className="flex flex-1 flex-col">
+      <p className={ios.hint}>Total</p>
+      <p className="truncate text-2xl font-bold tracking-tight tabular-nums">{formatCents(total.clearedCents)}</p>
+      <p className={`truncate text-[13px] font-semibold tabular-nums ${trend.clearedCents < 0 ? "text-destructive" : "text-positive"}`}>
+        {formatSignedCents(trend.clearedCents)} en {monthName(month.month)}
       </p>
-      <div className="grid grid-cols-3 gap-3">
-        <Figure label="Total" value={formatCents(total.clearedCents)} hint={planned(total.projectedCents, total.clearedCents, formatCents)} />
-        <Figure
-          label="Tendance"
-          value={formatSignedCents(trend.clearedCents)}
-          tone={trend.clearedCents < 0 ? "text-destructive" : "text-positive"}
-          hint={planned(trend.projectedCents, trend.clearedCents, formatSignedCents)}
-        />
-        <Figure
-          label="Dépenses du mois"
-          value={formatCents(expense.clearedCents)}
-          hint={planned(expense.projectedCents, expense.clearedCents, formatCents)}
-        />
+      <div className="mt-auto pt-3">
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+          <div className="h-full rounded-full bg-app-finances" style={{ width: `${percent}%` }} />
+        </div>
+        <p className={`${ios.hint} mt-1.5 truncate tabular-nums`}>
+          {planned > spent ? `${formatCents(spent)} dépensés / ${formatCents(planned)}` : `${formatCents(spent)} dépensés`}
+        </p>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 18a : couleurs iOS clair / sombre).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 18 : style iOS sur tout le site).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -11,14 +11,15 @@
 | Environnement | **En ligne** : https://save.emilienbourdet.fr (VPS OVH, compose principal de `/Serveur OVH - minecraft`, dossier `save` = clone git) ; mise à jour = `git pull` + `docker compose up -d --build save-migrate save-app` (voir `deploy/README.md`). Local (`npm run dev`) = tests uniquement. |
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
-| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : 18a faite, 18b à suivre |
+| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : socle design fait (étape 18), comptes / foyers à suivre |
 | Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
 
 ### Apparence
-- Palette façon iOS, **clair / sombre selon le réglage de l'appareil** (étape 18a), police système ; barre d'état de l'iPhone assortie.
-- Repas garde son style « pâte à modeler », toujours en clair, jusqu'à sa refonte (phase 3).
+- **Style iOS uniforme sur tout le site** (étape 18) : palette clair / sombre selon l'appareil, police système, grand titre qui se réduit au défilement, cartes et listes groupées, formulaires dans une fenêtre qui monte du bas (glisser vers le bas pour fermer), tirer pour rafraîchir.
+- Navigation : onglets des apps en bas sur iPhone (Accueil · Finances · To do · Repas), barre du haut sur ordinateur ; dans un module : grand titre, ⚙︎ Paramètres, « + », pages en contrôle segmenté.
+- ⚠️ Rendu à valider sur l'iPhone.
 
 ### Accès
 - Connexion par mot de passe unique (`/login`), session de 30 jours, déconnexion dans Paramètres.
@@ -26,16 +27,13 @@
 - Installable sur iPhone (« Sur l'écran d'accueil »), s'ouvre sur l'Accueil (`/`).
 
 ### Accueil — `/`
-- Tuiles de toutes les apps (Finances, To do).
-- Tableau de bord : un widget par module.
-  - Finances : total, tendance, dépenses du mois en cours (réel + prévu).
-  - To do : tâches en retard + du jour (cochables directement), compteurs aujourd'hui / 7 jours.
-- ⚠️ Rendu pas encore validé à l'écran.
+- Grand titre « Accueil » + date, pastille profil (déconnexion).
+- Cartes dans l'ordre : **Repas** (ce midi, ce soir, demain soir, proposé / validé), **To do** (en retard + du jour, cochables), **Finances** (total, tendance du mois, dépenses / prévu) et **Courses** (articles restants, progression) côte à côte.
 
 ### Navigation
-- Navigation commune à tous les modules : sur ordinateur, « Save » (→ Accueil) + sélecteur d'app + pages du module ; sur iPhone, onglets **Accueil** + pages du module.
-- Finances : **Piloter · Journal · Paramètres**, bouton **+ Saisir** sur toutes les pages.
+- Finances : **Piloter · Journal** + ⚙︎ Paramètres, bouton **+ Saisir** sur toutes les pages.
 - To do : **Tâches · Listes**, bouton **+ Tâche** sur toutes les pages.
+- Repas : **Semaine · Courses · Plats** + ⚙︎ Paramètres, bouton **+ Repas**.
 
 ### Piloter — `/finances` (lecture seule)
 - Navigation par mois (`?mois=AAAA-MM`).
@@ -74,13 +72,13 @@
 - ⚠️ Rendu pas encore validé à l'écran.
 
 ### Repas — `/repas`
-- Grille de la semaine (lundi → dimanche, midi et soir), navigation par semaine (`?semaine=AAAA-Wss`).
+- Semaine (`?semaine=AAAA-Wss`) : sur iPhone, bande des 7 jours (point orange = repas proposés) + le jour choisi (aujourd'hui par défaut), cartes Midi / Soir avec « Autre plat » / « Valider », « Valider la journée » ; sur ordinateur, les 7 jours côte à côte.
 - Case : plat, reste (↺, pré-rempli avec le repas précédent) ou absent / dehors ; note facultative.
 - **Générer / Regénérer** : remplit les cases vides ou proposées depuis l'historique ; ↻ sur une case pour un autre plat ; cadenas = validé, jamais touché ; « Tout valider ».
-- Glisser-déposer par la poignée ⋮⋮ (déplacer ou échanger), aussi sur iPhone.
+- Glisser-déposer par la poignée ⋮⋮ (déplacer ou échanger) ; sur iPhone, seulement entre midi et soir du jour affiché.
 - « + Repas » partout (date + créneau au choix).
 - Widget Accueil : midi, soir, demain soir, repas prévus / validés de la semaine.
-- Style « pâte à modeler » (feuille `components/clay.css`, classes `clay-*`), cases agrandies, bouton 🗑 sur chaque repas.
+- Style iOS commun (classes du module dans `components/look.ts`) ; pastille de couleur par plat.
 - **Plats** (`/repas/plats`) : recherche, filtres (à compléter, doublons probables, archivés), fusion en un geste, éditeur (nom, ingrédients pour un repas à 2 avec quantité / unité / rayon du drive, archiver, fusionner, supprimer si jamais mangé). Ingrédients pré-remplis d'après les courses des Excel (« suggéré » à valider).
 - Repas = plat (facultatif) + **accompagnements** (chips, salade, concombre, feta…, liste dans Repas › Paramètres) ; la génération propose les accompagnements habituels du plat ; « Ce n'est pas un plat » dans Plats.
 - **Courses** (`/repas/courses?semaine=`) : liste calculée depuis les repas (1 repas + 1 par reste prévu, quantités additionnées, arrondi au conditionnement, accompagnements par repas), basiques d'un geste (liste dans Repas › Paramètres), ajout manuel, rangée par rayon du drive, cochable, quantité modifiable, « déjà au placard », lien de recherche Courses U, copier / partager ; affichage compact. Widget Accueil : articles à acheter.
@@ -95,9 +93,9 @@
 
 ### Chantier prioritaire — refonte design + multi-comptes (cadré et validé le 24/11/2026)
 A. ~~Maquettes iPhone~~ (validées le 24/11/2026).
-B. **Socle design iOS (étape 18)** : ~~18a couleurs, police, clair / sombre~~ ; 18b navigation (onglets des apps en bas, grand titre, contrôle segmenté, « + » en haut à droite), `Sheet` qui monte du bas pour les 6 formulaires, composants communs, tirer pour rafraîchir, transitions ; 18c nouvel Accueil (widgets avec taille et ordre, Repas + Courses séparés, pastille profil).
+B. ~~**Socle design iOS (étape 18)**~~ fait le 24/11/2026, appliqué à tout le site d'un coup (y compris Repas) ; reste à valider sur l'iPhone. Plus tard : gestes balayer pour cocher / supprimer, transitions entre pages.
 C. **Comptes, foyers, admin** : `User`, `Household`, invitations (admin → compte, membre → foyer), connexion email + mot de passe, page Admin (membres, modules par personne), Paramètres › Foyer (inviter, rejoindre, quitter) ; migration de mes données vers mon compte ; Repas / Courses / listes To do partagées rattachés au foyer, Finances et autres listes à la personne.
-D. **Refonte module par module** : Repas (vue jour par jour sur iPhone), To do, Finances (Piloter repensé pour l'iPhone) ; gestes balayer pour cocher / supprimer.
+D. **Finitions par module** : Piloter repensé pour l'iPhone (graphiques), gestes balayer pour cocher / supprimer.
 
 ### Ensuite
 0. **Valider à l'écran** l'Accueil et To do (Repas validé le 24/11/2026).
@@ -151,3 +149,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
 | — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
 | 18a | `28a9649` | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |
+| 18 | (ce commit) | Style iOS sur tout le site : onglets des apps, grand titre, contrôle segmenté, `Sheet` (glisser pour fermer), tirer pour rafraîchir, Accueil en cartes (Repas, To do, Finances, Courses), Repas jour par jour sur iPhone, fin du style pâte à modeler |

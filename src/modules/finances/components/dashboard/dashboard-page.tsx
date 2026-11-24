@@ -21,7 +21,7 @@ export async function DashboardPage({ searchParams }: Props) {
   const { dashboard, accountNames } = await getDashboard(month);
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-4 px-4 pt-4 pb-28 sm:pb-10">
+    <main className="mx-auto w-full max-w-5xl space-y-4 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-12">
       <h1 className="sr-only">Piloter</h1>
       <div className="flex justify-center sm:justify-start">
         <MonthNav month={month} currentMonth={parseMonthParam(undefined, today)} params={{}} />

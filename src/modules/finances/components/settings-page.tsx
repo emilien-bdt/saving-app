@@ -11,9 +11,9 @@ export async function SettingsPage() {
   const topCategories = categories.filter((category) => !category.parentId);
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 px-4 pt-4 pb-28 sm:pb-10">
+    <main className="mx-auto w-full max-w-5xl space-y-6 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-12">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Paramètres</h1>
+        <h2 className="text-xl font-bold tracking-tight">Paramètres</h2>
         <LogoutButton />
       </div>
       <p className="text-sm text-muted-foreground">
@@ -22,9 +22,9 @@ export async function SettingsPage() {
 
       <AccountsSettings accounts={accounts} />
 
-      <section className="rounded-xl border p-4">
-        <h2 className="mb-2 font-semibold">Catégories</h2>
-        <ul className="divide-y">
+      <section className="rounded-2xl bg-card p-4">
+        <h2 className="mb-2 text-[17px] font-semibold">Catégories</h2>
+        <ul className="divide-y divide-border">
           {topCategories.map((category) => (
             <li key={category.id} className="py-2">
               <span className="flex items-center gap-2">

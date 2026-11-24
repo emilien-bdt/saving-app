@@ -12,7 +12,7 @@ export function ExpensesCard({ dashboard, monthParam }: { dashboard: Dashboard; 
   const delta = dashboard.expense.projectedCents - dashboard.previous.expenseCents;
 
   return (
-    <section className="rounded-xl border bg-card p-4 lg:col-span-2">
+    <section className="rounded-2xl bg-card p-4 lg:col-span-2">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-semibold">Où part l&apos;argent</h2>
         <p className="text-sm text-muted-foreground">

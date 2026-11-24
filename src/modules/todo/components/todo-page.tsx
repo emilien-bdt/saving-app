@@ -15,7 +15,7 @@ function FilterChip({ filter, current, label, color }: { filter: ParsedListFilte
     <Link
       href={listFilterHref(filter)}
       aria-current={active ? "page" : undefined}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm aria-[current=page]:border-primary aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-card px-3.5 text-[15px] aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground"
     >
       {color ? <span className="size-2 rounded-full" style={{ backgroundColor: color }} aria-hidden /> : null}
       {label}
@@ -36,7 +36,7 @@ export async function TodoPage({ searchParams }: Props) {
   const listParam = filter.kind === "all" ? null : filter.kind === "none" ? NO_LIST_PARAM : filter.id;
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-28 sm:pb-10">
+    <main className="mx-auto w-full max-w-5xl space-y-4 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-12">
       <h1 className="sr-only">Tâches</h1>
       {lists.length > 0 ? (
         <nav aria-label="Listes" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">

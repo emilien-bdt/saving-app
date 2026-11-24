@@ -43,7 +43,7 @@ export async function TransactionsPage({ searchParams }: Props) {
   );
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pt-4 pb-28 sm:pb-10">
+    <main className="mx-auto w-full max-w-5xl space-y-4 px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:pb-12">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="sr-only">Journal</h1>
         <MonthNav month={month} currentMonth={currentMonth} params={plainParams} />

@@ -45,9 +45,9 @@ export function TransactionsView({ transactions, view, options, defaultDate }: P
   return (
     <>
       {transactions.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed border-input p-8 text-center text-muted-foreground">
           <p>Aucune transaction.</p>
-          <button type="button" onClick={() => open(null)} className="mt-2 text-sm font-medium text-primary">
+          <button type="button" onClick={() => open(null)} className="mt-2 text-[15px] font-medium text-primary">
             Ajouter une transaction
           </button>
         </div>
@@ -55,22 +55,22 @@ export function TransactionsView({ transactions, view, options, defaultDate }: P
         <div className="space-y-5">
           {groupByDay(transactions).map((group) => (
             <section key={group.key} aria-label={group.dateIso ? formatDayHeading(group.dateIso) : "Plusieurs jours"}>
-              <h3 className="flex items-baseline justify-between border-b pb-1 text-sm font-medium text-muted-foreground">
+              <h3 className="flex items-baseline justify-between px-4 pb-1.5 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">
                 <span>{group.dateIso ? formatDayHeading(group.dateIso) : "Plusieurs jours dans le mois"}</span>
                 <span className="tabular-nums">{group.netCents !== 0 ? formatSignedCents(group.netCents) : null}</span>
               </h3>
-              <ul>{group.items.map(row)}</ul>
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-card">{group.items.map(row)}</ul>
             </section>
           ))}
         </div>
       ) : (
-        <ul className="divide-y rounded-xl border">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-card">
           {groupByLabel(transactions).map((group) => {
             const category = group.categoryId ? categories.get(group.categoryId) : undefined;
             return (
               <li key={group.key}>
                 <details className="group">
-                  <summary className="flex cursor-pointer list-none items-center gap-3 p-3 hover:bg-muted">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-2.5 active:bg-muted [&::-webkit-details-marker]:hidden">
                     <span
                       className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-white"
                       style={{ backgroundColor: category?.color ?? "#64748b" }}
@@ -91,7 +91,7 @@ export function TransactionsView({ transactions, view, options, defaultDate }: P
                       {formatTransactionAmount(group.totalCents, group.type)}
                     </span>
                   </summary>
-                  <ul className="border-t bg-muted/30 px-1">{group.items.map(row)}</ul>
+                  <ul className="divide-y divide-border border-t bg-muted/40">{group.items.map(row)}</ul>
                 </details>
               </li>
             );

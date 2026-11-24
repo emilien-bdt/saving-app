@@ -10,9 +10,9 @@ export function LoginForm({ next }: { next?: string }) {
   const [state, formAction, pending] = useActionState(login, initialState);
 
   return (
-    <form action={formAction} className="mt-6 grid gap-3">
+    <form action={formAction} className="mt-8 grid gap-2">
       {next ? <input type="hidden" name="next" value={next} /> : null}
-      <label htmlFor="password" className="text-sm font-medium">
+      <label htmlFor="password" className="px-1 text-[13px] font-medium text-muted-foreground">
         Mot de passe
       </label>
       {/* text-base (16px) prevents iOS from zooming on focus */}
@@ -25,14 +25,14 @@ export function LoginForm({ next }: { next?: string }) {
         autoFocus
         aria-invalid={state.error ? true : undefined}
         aria-describedby={state.error ? "login-error" : undefined}
-        className="h-11 rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
+        className="h-11 w-full rounded-xl bg-card px-3.5 text-[17px] text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/60 aria-invalid:ring-2 aria-invalid:ring-destructive disabled:opacity-50"
       />
       {state.error ? (
         <p id="login-error" role="alert" className="text-sm text-destructive">
           {state.error}
         </p>
       ) : null}
-      <Button type="submit" size="lg" disabled={pending} className="h-11">
+      <Button type="submit" size="lg" disabled={pending} className="mt-1">
         {pending ? "Connexion…" : "Se connecter"}
       </Button>
     </form>

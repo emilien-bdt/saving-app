@@ -9,7 +9,7 @@ import type { AccountSettingsItem } from "../../view-models";
 import { formatDateFr, formatRateBp } from "../format";
 
 const inputClass =
-  "h-10 rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive sm:text-sm";
+  "h-10 rounded-[10px] bg-card px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring/60 aria-invalid:ring-2 aria-invalid:ring-destructive sm:text-[15px]";
 
 /** Rates history of a savings account; a rate can be added or removed at any date, even in the past. */
 export function InterestRatesEditor({ account }: { account: AccountSettingsItem }) {
@@ -43,7 +43,7 @@ export function InterestRatesEditor({ account }: { account: AccountSettingsItem 
     });
 
   return (
-    <fieldset className="grid gap-2 rounded-xl border p-3">
+    <fieldset className="grid gap-2 rounded-xl bg-muted p-3">
       <legend className="px-1 text-sm font-medium">Intérêts journaliers</legend>
       <p className="text-xs text-muted-foreground">
         Chaque jour : solde × taux annuel / 365, arrondi au centime, ajouté au solde. Un taux s’applique à partir de sa date

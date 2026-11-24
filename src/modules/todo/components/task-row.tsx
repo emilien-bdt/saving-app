@@ -19,16 +19,17 @@ type Props = {
   onEdit?: (task: TaskItem) => void;
 };
 
+/** One task as an iOS list row: tick circle, title, due date / list / priority underneath. */
 export function TaskRow({ task, today, list, showList = true, onEdit }: Props) {
   const done = task.completedAtIso !== null;
   const due = task.dueIso && !done ? dueLabel(task.dueIso, today) : null;
   const content = (
     <>
-      <span className={`block truncate ${done ? "text-muted-foreground line-through" : ""}`}>{task.title}</span>
+      <span className={`block truncate text-[17px] leading-[22px] ${done ? "text-muted-foreground line-through" : ""}`}>{task.title}</span>
       {due || (showList && list) || task.note || task.priority === "HIGH" ? (
-        <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[13px] text-muted-foreground">
           {task.priority === "HIGH" && !done ? (
-            <span className="inline-flex items-center gap-1 text-destructive">
+            <span className="inline-flex items-center gap-1 text-warning">
               <Flag className="size-3" aria-hidden />
               Prioritaire
             </span>
@@ -47,14 +48,14 @@ export function TaskRow({ task, today, list, showList = true, onEdit }: Props) {
   );
 
   return (
-    <li className="flex items-center gap-1 py-0.5">
-      <TaskCheck id={task.id} done={done} title={task.title} />
+    <li className="flex items-center gap-0.5 pr-2">
+      <TaskCheck id={task.id} done={done} title={task.title} late={due?.tone === "overdue"} />
       {onEdit ? (
-        <button type="button" onClick={() => onEdit(task)} className="min-w-0 flex-1 rounded-lg px-1 py-1.5 text-left hover:bg-muted">
+        <button type="button" onClick={() => onEdit(task)} className="min-w-0 flex-1 py-2.5 text-left active:opacity-60">
           {content}
         </button>
       ) : (
-        <div className="min-w-0 flex-1 px-1 py-1.5">{content}</div>
+        <div className="min-w-0 flex-1 py-2.5">{content}</div>
       )}
     </li>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { todayIso } from "@/shared/lib/today";
+import { ios } from "@/shared/ui/ios";
 import { getLists } from "../data/lists";
 import { getOpenTasks } from "../data/tasks";
 import { focusTasks, summarizeTasks } from "../domain/tasks";
@@ -22,8 +23,8 @@ export async function TodoHomeWidget(): Promise<ReactNode> {
   ].filter((count) => count !== null);
 
   return (
-    <div className="space-y-2">
-      <p className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
+    <div>
+      <p className={`${ios.hint} flex flex-wrap gap-x-3`}>
         {counts.map((count) => (
           <span key={count.text} className={count.tone}>
             {count.text}
@@ -31,17 +32,17 @@ export async function TodoHomeWidget(): Promise<ReactNode> {
         ))}
       </p>
       {focus.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">Rien d&apos;urgent pour aujourd&apos;hui.</p>
+        <p className="py-3 text-[15px] text-muted-foreground">Rien d&apos;urgent pour aujourd&apos;hui.</p>
       ) : (
-        <ul className="-mx-1">
+        <ul className="-mx-2 mt-1 divide-y divide-border">
           {focus.map((task) => (
             <TaskRow key={task.id} task={task} today={today} list={task.listId ? listById.get(task.listId) : undefined} />
           ))}
         </ul>
       )}
       {hidden > 0 ? (
-        <Link href="/todo" className="block text-sm text-muted-foreground hover:text-foreground">
-          + {hidden} autre{hidden > 1 ? "s" : ""}
+        <Link href="/todo" className="mt-1 block text-[15px] text-primary">
+          {hidden} autre{hidden > 1 ? "s" : ""} pour aujourd&apos;hui
         </Link>
       ) : null}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronLeft, ChevronRight, Circle, CircleCheckBig, ClipboardCopy, ExternalLink, Plus, RotateCcw, Share2, ShoppingBasket, Undo2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ClipboardCopy, ExternalLink, Plus, RotateCcw, Share2, ShoppingBasket, Undo2, X } from "lucide-react";
 import Link from "next/link";
 import { type CSSProperties, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import {
@@ -15,7 +15,7 @@ import {
 import { AISLES, UNITS } from "../domain/ingredients";
 import { coursesUSearchUrl, lineQuantity, type ShoppingLine, shoppingText } from "../domain/shopping";
 import type { SideOption } from "../view-models";
-import { clay } from "./clay";
+import { look } from "./look";
 import { AISLE_LOOK } from "./labels";
 
 type Props = {
@@ -120,13 +120,19 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           aria-checked={line.checked}
           aria-label={line.checked ? `${line.name} : remettre à acheter` : `${line.name} : pris`}
           onClick={() => run({ type: "check", id: line.ingredientId, checked: !line.checked }, () => setItemChecked(week, line.ingredientId, !line.checked))}
-          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full active:scale-90 transition-transform"
         >
-          {line.checked ? <CircleCheckBig className="size-5 text-emerald-600" aria-hidden /> : <Circle className="size-5 opacity-60" aria-hidden />}
+          {line.checked ? (
+            <span className="inline-flex size-[22px] items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Check className="size-3.5" strokeWidth={3.2} aria-hidden />
+            </span>
+          ) : (
+            <span className="size-[22px] rounded-full border-2 border-muted-foreground/60" aria-hidden />
+          )}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className={`text-[0.95rem] font-semibold ${line.checked ? "line-through" : ""}`}>{line.name}</span>
+            <span className={`text-[17px] ${line.checked ? "line-through" : ""}`}>{line.name}</span>
             {editing?.id === line.ingredientId ? (
               <form
                 className="inline-flex items-center gap-1"
@@ -143,15 +149,15 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
                   inputMode="numeric"
                   aria-label={`Quantité de ${line.name} (${unitLabel(line.unit)})`}
                   placeholder="auto"
-                  className={`${clay.field} h-8 w-20 text-sm`}
+                  className={`${look.field} h-8! w-20 text-[15px]!`}
                 />
-                <span className="text-xs opacity-75">{unitLabel(line.unit)}</span>
+                <span className="text-xs text-muted-foreground">{unitLabel(line.unit)}</span>
               </form>
             ) : (
               <button
                 type="button"
                 onClick={() => setEditing({ id: line.ingredientId, value: line.overridden && line.amount !== null ? String(line.amount) : "" })}
-                className={`rounded-full px-1 text-sm font-medium underline decoration-dotted underline-offset-4 ${quantity ? "" : "opacity-60"}`}
+                className={`rounded-full px-1 text-sm font-medium underline decoration-dotted underline-offset-4 ${quantity ? "" : "text-muted-foreground"}`}
                 title="Modifier la quantité"
               >
                 {quantity || "quantité ?"}
@@ -159,7 +165,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
               </button>
             )}
           </div>
-          {line.reasons.length > 0 ? <p className="truncate text-xs opacity-65">{line.reasons.join(" · ")}</p> : null}
+          {line.reasons.length > 0 ? <p className="truncate text-xs text-muted-foreground">{line.reasons.join(" · ")}</p> : null}
         </div>
         <a
           href={coursesUSearchUrl(line.name)}
@@ -167,7 +173,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           rel="noopener noreferrer"
           aria-label={`Chercher ${line.name} sur Courses U`}
           title="Chercher sur Courses U"
-          className={`${clay.iconBtn} ${clay.iconBtnSm} shrink-0`}
+          className={`${look.iconBtn} ${look.iconBtnSm} shrink-0`}
         >
           <ExternalLink className="size-3.5" aria-hidden />
         </a>
@@ -176,7 +182,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           onClick={() => run({ type: "remove", id: line.ingredientId, computed }, () => removeItem(week, line.ingredientId, computed))}
           aria-label={computed ? `${line.name} : déjà au placard` : `Retirer ${line.name}`}
           title={computed ? "Déjà au placard" : "Retirer"}
-          className={`${clay.iconBtn} ${clay.iconBtnSm} shrink-0`}
+          className={`${look.iconBtn} ${look.iconBtnSm} shrink-0`}
         >
           <X className="size-3.5" aria-hidden />
         </button>
@@ -188,36 +194,36 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Link href={`/repas/courses?semaine=${previousWeek}`} aria-label="Semaine précédente" className={clay.iconBtn}>
+          <Link href={`/repas/courses?semaine=${previousWeek}`} aria-label="Semaine précédente" className={`${look.iconBtn} bg-card!`}>
             <ChevronLeft className="size-5" aria-hidden />
           </Link>
           <div className="px-1">
-            <h1 className="flex items-center gap-2 text-xl font-extrabold sm:text-2xl">
-              <ShoppingBasket className="size-6 shrink-0" aria-hidden />
+            <h2 className="flex items-center gap-2 text-[17px] font-semibold">
+              <ShoppingBasket className="size-5 shrink-0 text-app-repas" aria-hidden />
               Courses · {title}
-            </h1>
-            <p className="text-sm font-medium opacity-70">
+            </h2>
+            <p className="text-sm font-medium text-muted-foreground">
               {done}/{active.length} pris · d&apos;après <Link href={`/repas?semaine=${week}`} className="underline underline-offset-2">les repas de la semaine</Link>
             </p>
           </div>
-          <Link href={`/repas/courses?semaine=${nextWeek}`} aria-label="Semaine suivante" className={clay.iconBtn}>
+          <Link href={`/repas/courses?semaine=${nextWeek}`} aria-label="Semaine suivante" className={`${look.iconBtn} bg-card!`}>
             <ChevronRight className="size-5" aria-hidden />
           </Link>
         </div>
         <div className="flex flex-wrap items-center gap-3 pb-1">
           {done > 0 ? (
-            <button type="button" onClick={() => run({ type: "uncheckAll" }, () => uncheckAllItems(week))} className={`${clay.btn} ${clay.btnPlain} ${clay.btnSm}`}>
+            <button type="button" onClick={() => run({ type: "uncheckAll" }, () => uncheckAllItems(week))} className={`${look.btn} ${look.btnPlain} ${look.btnSm}`}>
               <RotateCcw className="size-4" aria-hidden />
               Tout décocher
             </button>
           ) : null}
           {canShare ? (
-            <button type="button" onClick={share} className={`${clay.btn} ${clay.btnGreen} ${clay.btnSm}`}>
+            <button type="button" onClick={share} className={`${look.btn} ${look.btnGreen} ${look.btnSm}`}>
               <Share2 className="size-4" aria-hidden />
               Partager
             </button>
           ) : null}
-          <button type="button" onClick={copy} className={`${clay.btn} ${clay.btnSm}`}>
+          <button type="button" onClick={copy} className={`${look.btn} ${look.btnSm}`}>
             <ClipboardCopy className="size-4" aria-hidden />
             Copier
           </button>
@@ -225,14 +231,14 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
       </div>
 
       {notice ? (
-        <p className="inline-flex items-center gap-2 rounded-2xl bg-emerald-100 px-4 py-2 font-semibold text-emerald-800">
+        <p className="inline-flex items-center gap-2 rounded-xl bg-positive/15 px-4 py-2.5 text-[15px] text-positive">
           <Check className="size-4" aria-hidden />
           {notice}
         </p>
       ) : null}
-      {error ? <p className="rounded-2xl bg-red-100 px-4 py-2 font-semibold text-red-800">{error}</p> : null}
+      {error ? <p role="alert" className="rounded-xl bg-destructive/12 px-4 py-2.5 text-[15px] text-destructive">{error}</p> : null}
 
-      <section className={`${clay.day} ${clay.dayTight} grid gap-2`} aria-label="Ajouter">
+      <section className={`${look.day} ${look.dayTight} grid gap-2`} aria-label="Ajouter">
         <form
           className="flex gap-2"
           onSubmit={(event) => {
@@ -252,20 +258,20 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
             maxLength={80}
             autoComplete="off"
             enterKeyHint="done"
-            className={`${clay.field} h-10 text-sm`}
+            className={`${look.field}`}
           />
           <datalist id="shopping-names">
             {ingredientNames.map((item) => (
               <option key={item.id} value={item.name} />
             ))}
           </datalist>
-          <button type="submit" disabled={!name.trim()} className={`${clay.btn} ${clay.btnSm}`} aria-label="Ajouter">
+          <button type="submit" disabled={!name.trim()} className={`${look.btn} ${look.btnSm}`} aria-label="Ajouter">
             <Plus className="size-4" aria-hidden />
           </button>
         </form>
         {staples.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Basiques">
-            <span className="text-xs font-bold uppercase opacity-70">Basiques</span>
+            <span className="text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Basiques</span>
             {staples.map((staple) => {
               const line = inList.get(staple.id);
               const added = line !== undefined && !line.removed;
@@ -276,7 +282,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
                   aria-pressed={added}
                   disabled={added && line?.source !== "STAPLE"}
                   onClick={() => run(null, () => toggleStaple(week, staple.id, !added))}
-                  className={`${clay.chip} ${clay.chipSm}`}
+                  className={`${look.chip} ${look.chipSm}`}
                 >
                   {staple.name}
                 </button>
@@ -287,7 +293,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
       </section>
 
       {active.length === 0 ? (
-        <p className={`${clay.empty} p-6 text-center font-semibold`}>
+        <p className={`${look.empty} p-6 text-center font-semibold`}>
           Rien à acheter : remplis la semaine, ajoute les ingrédients des plats ou tape un basique.
         </p>
       ) : (
@@ -299,13 +305,13 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
               <section
                 key={aisle.id}
                 style={{ "--hue": AISLE_LOOK[aisle.id]?.hue ?? 60 } as CSSProperties}
-                className={`${clay.day} ${clay.tint} ${clay.dayTight} min-h-36`}
+                className={`${look.day} ${look.tint} ${look.dayTight} min-h-36`}
                 aria-labelledby={`aisle-${aisle.id}`}
               >
-                <h2 id={`aisle-${aisle.id}`} className={`${clay.tintTitle} mb-1`}>
+                <h2 id={`aisle-${aisle.id}`} className={`${look.tintTitle} mb-1`}>
                   <span aria-hidden>{AISLE_LOOK[aisle.id]?.emoji}</span>
                   {aisle.label}
-                  <span className="opacity-60">· {inAisle.filter((line) => !line.checked).length}</span>
+                  <span className="text-muted-foreground">· {inAisle.filter((line) => !line.checked).length}</span>
                 </h2>
                 <ul>{inAisle.map(row)}</ul>
               </section>
@@ -315,18 +321,18 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
       )}
 
       {removed.length > 0 ? (
-        <details className={`${clay.empty} p-4`}>
-          <summary className="cursor-pointer font-bold">Déjà au placard · {removed.length}</summary>
+        <details className={`${look.empty} p-4`}>
+          <summary className="cursor-pointer font-semibold">Déjà au placard · {removed.length}</summary>
           <ul className="mt-2 grid gap-1">
             {removed.map((line) => (
               <li key={line.ingredientId} className="flex items-center justify-between gap-2">
                 <span>
-                  {line.name} <span className="text-sm opacity-70">{lineQuantity(line)}</span>
+                  {line.name} <span className="text-sm text-muted-foreground">{lineQuantity(line)}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => run({ type: "restore", id: line.ingredientId }, () => restoreItem(week, line.ingredientId))}
-                  className={`${clay.btn} ${clay.btnPlain} text-sm`}
+                  className={`${look.btn} ${look.btnPlain} text-sm`}
                 >
                   <Undo2 className="size-4" aria-hidden />
                   À acheter

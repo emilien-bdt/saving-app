@@ -1,11 +1,11 @@
 "use client";
 
-import { Circle, CircleCheckBig } from "lucide-react";
+import { Check } from "lucide-react";
 import { useOptimistic, useTransition } from "react";
 import { setTaskDone } from "../actions/tasks";
 
-/** One tap to tick / untick a task (optimistic). */
-export function TaskCheck({ id, done, title }: { id: string; done: boolean; title: string }) {
+/** One tap to tick / untick a task (optimistic), iOS Reminders-like circle. */
+export function TaskCheck({ id, done, title, late = false }: { id: string; done: boolean; title: string; late?: boolean }) {
   const [optimisticDone, setOptimisticDone] = useOptimistic(done);
   const [, startTransition] = useTransition();
   return (
@@ -20,12 +20,14 @@ export function TaskCheck({ id, done, title }: { id: string; done: boolean; titl
           await setTaskDone(id, !optimisticDone);
         })
       }
-      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted"
+      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full active:scale-90 transition-transform"
     >
       {optimisticDone ? (
-        <CircleCheckBig className="size-6 text-positive" aria-hidden />
+        <span className="inline-flex size-[22px] items-center justify-center rounded-full bg-primary text-primary-foreground">
+          <Check className="size-3.5" strokeWidth={3.2} aria-hidden />
+        </span>
       ) : (
-        <Circle className="size-6 text-muted-foreground" aria-hidden />
+        <span className={`size-[22px] rounded-full border-2 ${late ? "border-destructive" : "border-muted-foreground/60"}`} aria-hidden />
       )}
     </button>
   );

@@ -80,9 +80,9 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
   const pocketParents = active.filter((parent) => !parent.parentId && active.some((account) => account.parentId === parent.id));
 
   return (
-    <section className="rounded-xl border p-4">
+    <section className="rounded-2xl bg-card p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Comptes</h2>
+        <h2 className="text-[17px] font-semibold">Comptes</h2>
         <Button type="button" variant="outline" size="sm" onClick={() => open(null)}>
           <Plus aria-hidden />
           Ajouter
@@ -99,7 +99,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
           if (group === "POCKETS") {
             return (
               <div key={group}>
-                <h3 className="text-sm font-medium text-muted-foreground">{ACCOUNT_GROUP_LABELS[group]}</h3>
+                <h3 className="mt-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">{ACCOUNT_GROUP_LABELS[group]}</h3>
                 {pocketParents.map((parent) => {
                   const pockets = active.filter((account) => account.parentId === parent.id);
                   return (
@@ -107,7 +107,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
                       {multipleParents ? (
                         <p className="mt-1 text-xs text-muted-foreground">{parent.name}</p>
                       ) : null}
-                      <ul className="divide-y">{pockets.map((pocket) => row(pocket, pockets))}</ul>
+                      <ul className="divide-y divide-border">{pockets.map((pocket) => row(pocket, pockets))}</ul>
                     </div>
                   );
                 })}
@@ -127,9 +127,9 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
           const list = active.filter((account) => !account.parentId && account.group === group);
           return (
             <div key={group}>
-              <h3 className="text-sm font-medium text-muted-foreground">{ACCOUNT_GROUP_LABELS[group]}</h3>
+              <h3 className="mt-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">{ACCOUNT_GROUP_LABELS[group]}</h3>
               {list.length > 0 ? (
-                <ul className="divide-y">{list.map((account) => row(account, list))}</ul>
+                <ul className="divide-y divide-border">{list.map((account) => row(account, list))}</ul>
               ) : (
                 <p className="py-1.5 text-sm text-muted-foreground">Aucun compte.</p>
               )}
@@ -140,7 +140,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
         {archived.length > 0 ? (
           <details>
             <summary className="cursor-pointer text-sm text-muted-foreground">Archivés ({archived.length})</summary>
-            <ul className="divide-y opacity-70">{archived.map((account) => row(account, null))}</ul>
+            <ul className="divide-y divide-border opacity-70">{archived.map((account) => row(account, null))}</ul>
           </details>
         ) : null}
       </div>

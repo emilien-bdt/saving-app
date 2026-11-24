@@ -1,6 +1,5 @@
 "use client";
 
-import { LayoutDashboard, List, Settings } from "lucide-react";
 import { useState } from "react";
 import type { NavApp } from "@/modules/types";
 import { todayIso } from "@/shared/lib/today";
@@ -9,12 +8,11 @@ import type { TransactionFormOptions } from "../view-models";
 import { TransactionEditor } from "./transaction-editor";
 
 const LINKS: ModuleNavLink[] = [
-  { href: "/finances", label: "Piloter", icon: LayoutDashboard, exact: true },
-  { href: "/finances/transactions", label: "Journal", icon: List },
-  { href: "/finances/parametres", label: "Paramètres", icon: Settings },
+  { href: "/finances", label: "Piloter", exact: true },
+  { href: "/finances/transactions", label: "Journal" },
 ];
 
-/** Common module navigation + "+ Saisir" (quick transaction form) on every page. */
+/** Module frame (large title, Piloter · Journal, ⚙︎) + « Saisir » (quick transaction sheet) on every page. */
 export function FinancesNav({ apps, options }: { apps: readonly NavApp[]; options: TransactionFormOptions }) {
   const [editorKey, setEditorKey] = useState<number | null>(null);
   return (
@@ -23,18 +21,12 @@ export function FinancesNav({ apps, options }: { apps: readonly NavApp[]; option
         moduleName="Finances"
         apps={apps}
         links={LINKS}
+        settingsHref="/finances/parametres"
         addLabel="Saisir"
-        mobileSplit={1}
         onAdd={() => setEditorKey((key) => (key ?? 0) + 1)}
       />
       {editorKey !== null ? (
-        <TransactionEditor
-          key={editorKey}
-          transaction={null}
-          options={options}
-          defaultDate={todayIso()}
-          onClose={() => setEditorKey(null)}
-        />
+        <TransactionEditor key={editorKey} transaction={null} options={options} defaultDate={todayIso()} onClose={() => setEditorKey(null)} />
       ) : null}
     </>
   );

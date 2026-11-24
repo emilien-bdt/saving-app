@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { setSideItem } from "../actions/dishes";
 import { setStapleItem } from "../actions/shopping";
 import type { SideOption } from "../view-models";
-import { clay } from "./clay";
+import { look } from "./look";
 
 const KINDS = {
   side: {
@@ -39,23 +39,23 @@ export function SidesManager({ kind, items }: { kind: keyof typeof KINDS; items:
     });
 
   return (
-    <section className={`${clay.day} grid gap-4`} aria-labelledby={`${kind}-title`}>
+    <section className={`${look.day} grid gap-4`} aria-labelledby={`${kind}-title`}>
       <div>
-        <h2 id={`${kind}-title`} className="text-xl font-extrabold">
+        <h2 id={`${kind}-title`} className="text-[17px] font-semibold">
           {config.title}
         </h2>
-        <p className="text-sm font-medium opacity-75">{config.description}</p>
+        <p className="text-sm font-medium text-muted-foreground">{config.description}</p>
       </div>
       <ul className="flex flex-wrap gap-2">
         {items.map((item) => (
-          <li key={item.id} className={`${clay.chip} inline-flex items-center gap-1.5 pr-1.5`}>
+          <li key={item.id} className={`${look.chip} inline-flex items-center gap-1.5 pr-1.5`}>
             {item.name}
             <button
               type="button"
               disabled={pending}
               onClick={() => change(item.name, false)}
               aria-label={`Retirer ${item.name} de la liste`}
-              className="inline-flex size-6 items-center justify-center rounded-full hover:bg-black/10"
+              className="inline-flex size-6 items-center justify-center rounded-full hover:bg-foreground/10"
             >
               <X className="size-3.5" aria-hidden />
             </button>
@@ -72,13 +72,13 @@ export function SidesManager({ kind, items }: { kind: keyof typeof KINDS; items:
         <label htmlFor={`new-${kind}`} className="sr-only">
           {config.placeholder}
         </label>
-        <input id={`new-${kind}`} value={name} onChange={(event) => setName(event.target.value)} placeholder={config.placeholder} maxLength={80} className={`${clay.field} max-w-xs`} />
-        <button type="submit" disabled={pending || !name.trim()} className={clay.btn}>
+        <input id={`new-${kind}`} value={name} onChange={(event) => setName(event.target.value)} placeholder={config.placeholder} maxLength={80} className={`${look.field} max-w-xs`} />
+        <button type="submit" disabled={pending || !name.trim()} className={look.btn}>
           <Plus className="size-4" aria-hidden />
           Ajouter
         </button>
       </form>
-      {error ? <p className="rounded-2xl bg-red-100 px-4 py-2 font-semibold text-red-800">{error}</p> : null}
+      {error ? <p role="alert" className="rounded-xl bg-destructive/12 px-4 py-2.5 text-[15px] text-destructive">{error}</p> : null}
     </section>
   );
 }

@@ -15,7 +15,7 @@ function ListForm({ list, onDone }: { list: ListItem | null; onDone: () => void 
 
   return (
     <form
-      className="grid gap-3 rounded-xl border bg-card p-3"
+      className="grid gap-3 rounded-2xl bg-card p-3"
       onSubmit={(event) => {
         event.preventDefault();
         startTransition(async () => {
@@ -41,7 +41,7 @@ function ListForm({ list, onDone }: { list: ListItem | null; onDone: () => void 
           placeholder={list ? "Nom" : "Nouvelle liste"}
           maxLength={60}
           aria-invalid={error ? true : undefined}
-          className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
+          className="h-11 min-w-0 flex-1 rounded-xl bg-card px-3.5 text-[17px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60 aria-invalid:ring-2 aria-invalid:ring-destructive"
         />
         <Button type="submit" size="lg" disabled={pending || name.trim() === ""}>
           {list ? "Enregistrer" : "Ajouter"}
@@ -89,16 +89,16 @@ export function ListsManager({ lists }: { lists: ListItem[] }) {
       {lists.length === 0 ? (
         <p className="text-sm text-muted-foreground">Aucune liste pour l&apos;instant : les tâches restent « sans liste ».</p>
       ) : (
-        <ul className="divide-y rounded-xl border bg-card">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl bg-card">
           {lists.map((list, index) =>
             editingId === list.id ? (
               <li key={list.id} className="p-2">
                 <ListForm list={list} onDone={() => setEditingId(null)} />
               </li>
             ) : (
-              <li key={list.id} className="flex items-center gap-2 px-3 py-2">
+              <li key={list.id} className="flex min-h-12 items-center gap-1 py-1 pr-2 pl-4">
                 <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: list.color }} aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{list.name}</span>
+                <span className="ml-2 min-w-0 flex-1 truncate text-[17px]">{list.name}</span>
                 <span className="text-sm text-muted-foreground tabular-nums">
                   {list.openCount} à faire
                 </span>

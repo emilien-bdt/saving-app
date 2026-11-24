@@ -4,7 +4,7 @@ import { formatSignedCents } from "./format";
 
 function Figure({ label, cleared, projected, tone }: { label: string; cleared: string; projected: string; tone?: string }) {
   return (
-    <div className="rounded-xl border bg-card p-3">
+    <div className="rounded-2xl bg-card p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className={`text-base font-semibold tabular-nums sm:text-lg ${tone ?? ""}`}>{cleared}</p>
       {projected !== cleared ? <p className="text-xs text-muted-foreground tabular-nums">Prévu : {projected}</p> : null}

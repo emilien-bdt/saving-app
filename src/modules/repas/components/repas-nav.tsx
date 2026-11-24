@@ -1,6 +1,5 @@
 "use client";
 
-import { BookOpen, CalendarDays, Settings, ShoppingBasket } from "lucide-react";
 import { useState } from "react";
 import type { NavApp } from "@/modules/types";
 import { todayIso } from "@/shared/lib/today";
@@ -9,18 +8,25 @@ import type { DishOption, SideOption } from "../view-models";
 import { MealEditor } from "./meal-editor";
 
 const LINKS: ModuleNavLink[] = [
-  { href: "/repas", label: "Semaine", icon: CalendarDays, exact: true },
-  { href: "/repas/courses", label: "Courses", icon: ShoppingBasket },
-  { href: "/repas/plats", label: "Plats", icon: BookOpen },
-  { href: "/repas/parametres", label: "Paramètres", icon: Settings },
+  { href: "/repas", label: "Semaine", exact: true },
+  { href: "/repas/courses", label: "Courses" },
+  { href: "/repas/plats", label: "Plats" },
 ];
 
-/** Common module navigation + "+ Repas" (any day, any slot) on every page. */
+/** Module frame (large title, Semaine · Courses · Plats, ⚙︎) + « Repas » (any day, any slot) on every page. */
 export function RepasNav({ apps, dishes, sides }: { apps: readonly NavApp[]; dishes: readonly DishOption[]; sides: readonly SideOption[] }) {
   const [editorKey, setEditorKey] = useState<number | null>(null);
   return (
     <>
-      <ModuleNav moduleName="Repas" apps={apps} links={LINKS} addLabel="Repas" mobileSplit={2} onAdd={() => setEditorKey((key) => (key ?? 0) + 1)} />
+      <ModuleNav
+        moduleName="Repas"
+        apps={apps}
+        links={LINKS}
+        settingsHref="/repas/parametres"
+        addLabel="Repas"
+        wide
+        onAdd={() => setEditorKey((key) => (key ?? 0) + 1)}
+      />
       {editorKey !== null ? (
         <MealEditor
           key={editorKey}
