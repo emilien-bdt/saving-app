@@ -14,7 +14,7 @@ export type ImportResult = {
 };
 
 /** Creates the missing accounts (pockets under their parent) and sets their initial balance. */
-async function ensureAccounts(tx: TransactionClient, plan: ImportPlan): Promise<Record<AccountKey, string>> {
+async function ensureAccounts(tx: TransactionClient, plan: ImportPlan, userId: string): Promise<Record<AccountKey, string>> {
   const ids: Partial<Record<AccountKey, string>> = {};
   for (const key of plan.accounts) {
     const definition = IMPORT_ACCOUNTS[key];
@@ -23,7 +23,7 @@ async function ensureAccounts(tx: TransactionClient, plan: ImportPlan): Promise<
       throw new Error(`Compte parent « ${IMPORT_ACCOUNTS[definition.parentKey].name} » absent de l'import`);
     }
     const balance = { initialBalanceCents: plan.initialBalances[key], initialBalanceDate: plan.startDate };
-    const existing = await tx.account.findFirst({ where: { name: definition.name } });
+    const existing = await tx.account.findFirst({ where: { userId, name: definition.name } });
 
     if (existing) {
       await tx.account.update({
@@ -35,6 +35,7 @@ async function ensureAccounts(tx: TransactionClient, plan: ImportPlan): Promise<
       const created = await tx.account.create({
         data: {
           ...balance,
+          userId,
           name: definition.name,
           type: definition.type,
           color: definition.color,
@@ -50,8 +51,8 @@ async function ensureAccounts(tx: TransactionClient, plan: ImportPlan): Promise<
   return ids as Record<AccountKey, string>;
 }
 
-async function loadCategoryIds(tx: TransactionClient): Promise<Record<DefaultCategoryKey, string>> {
-  const categories = await tx.category.findMany({ select: { id: true, name: true, kind: true } });
+async function loadCategoryIds(tx: TransactionClient, userId: string): Promise<Record<DefaultCategoryKey, string>> {
+  const categories = await tx.category.findMany({ where: { userId }, select: { id: true, name: true, kind: true } });
   const ids: Partial<Record<DefaultCategoryKey, string>> = {};
   for (const definition of DEFAULT_CATEGORIES) {
     const match = categories.find((category) => category.name === definition.name && category.kind === definition.kind);
@@ -64,9 +65,9 @@ async function loadCategoryIds(tx: TransactionClient): Promise<Record<DefaultCat
 }
 
 /** Deletes every import batch, hence every imported transaction (cascade). Manual entries are kept. */
-export async function deleteAllImports(): Promise<number> {
-  const { count } = await db.transaction.deleteMany({ where: { importBatchId: { not: null } } });
-  await db.importBatch.deleteMany({});
+export async function deleteAllImports(userId: string): Promise<number> {
+  const { count } = await db.transaction.deleteMany({ where: { userId, importBatchId: { not: null } } });
+  await db.importBatch.deleteMany({ where: { userId } });
   return count;
 }
 
@@ -75,11 +76,11 @@ export async function deleteAllImports(): Promise<number> {
  * (same importRef) are skipped: running the import twice changes nothing.
  * One ImportBatch per file; deleting it undoes that file's import.
  */
-export async function applyImportPlan(plan: ImportPlan): Promise<ImportResult> {
+export async function applyImportPlan(plan: ImportPlan, userId: string): Promise<ImportResult> {
   return db.$transaction(
     async (tx) => {
-      const accountIds = await ensureAccounts(tx, plan);
-      const categoryIds = await loadCategoryIds(tx);
+      const accountIds = await ensureAccounts(tx, plan, userId);
+      const categoryIds = await loadCategoryIds(tx, userId);
       const files: ImportResult["files"] = [];
 
       for (const fileName of plan.fileNames) {
@@ -95,9 +96,10 @@ export async function applyImportPlan(plan: ImportPlan): Promise<ImportResult> {
           continue;
         }
 
-        const batch = await tx.importBatch.create({ data: { fileName, rowCount: fresh.length } });
+        const batch = await tx.importBatch.create({ data: { userId, fileName, rowCount: fresh.length } });
         await tx.transaction.createMany({
           data: fresh.map((row) => ({
+            userId,
             date: row.date,
             dayUnknown: row.dayUnknown,
             amountCents: row.amountCents,

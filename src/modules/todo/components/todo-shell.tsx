@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 import { getNavApps } from "@/modules/navigation";
-import { requireSession } from "@/shared/auth/server";
+import { requireModule } from "@/shared/auth/server";
 import { getLists } from "../data/lists";
 import { TodoNav } from "./todo-nav";
 
 export async function TodoShell({ children }: { children: ReactNode }) {
-  await requireSession();
+  const scope = await requireModule("todo");
   const lists = await getLists();
   return (
     <>
-      <TodoNav apps={getNavApps()} lists={lists} />
+      <TodoNav apps={getNavApps(scope.disabledModules)} lists={lists} />
       {children}
     </>
   );

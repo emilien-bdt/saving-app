@@ -1,3 +1,4 @@
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { todayIso } from "@/shared/lib/today";
 import { type AccountState, accountGroupOf, canDeleteAccount, nextSortOrder } from "../domain/accounts";
@@ -8,7 +9,9 @@ import { getInterestRates } from "./interest";
 
 /** Every account with what the rules need (usage counts). */
 export async function getAccountStates(): Promise<(AccountState & { color: string; icon: string | null })[]> {
+  const { userId } = await requireSession();
   const accounts = await db.account.findMany({
+    where: { userId },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     include: {
       _count: { select: { transactions: true, incomingTransfers: true, recurringRules: true, incomingRecurringRules: true } },
@@ -54,9 +57,11 @@ export async function getAccountsForSettings(): Promise<AccountSettingsItem[]> {
 
 /** A new account starts at 0 € today; its balance then only moves through transactions. */
 export async function createAccount(data: AccountData, accounts: readonly AccountState[]): Promise<void> {
+  const { userId } = await requireSession();
   await db.account.create({
     data: {
       ...data,
+      userId,
       sortOrder: nextSortOrder(data, accounts),
       initialBalanceCents: 0,
       initialBalanceDate: new Date(`${todayIso()}T00:00:00Z`),
@@ -68,20 +73,24 @@ export async function createAccount(data: AccountData, accounts: readonly Accoun
 export async function updateAccount(id: string, data: AccountData, accounts: readonly AccountState[]): Promise<void> {
   const existing = accounts.find((account) => account.id === id);
   const moved = existing && (existing.parentId !== data.parentId || (!data.parentId && existing.type !== data.type));
+  const { userId } = await requireSession();
   await db.account.update({
-    where: { id },
+    where: { id, userId },
     data: { ...data, ...(moved ? { sortOrder: nextSortOrder(data, accounts) } : {}) },
   });
 }
 
 export async function setAccountArchived(id: string, archived: boolean): Promise<void> {
-  await db.account.update({ where: { id }, data: { archivedAt: archived ? new Date() : null } });
+  const { userId } = await requireSession();
+  await db.account.update({ where: { id, userId }, data: { archivedAt: archived ? new Date() : null } });
 }
 
 export async function deleteAccount(id: string): Promise<void> {
-  await db.account.delete({ where: { id } });
+  const { userId } = await requireSession();
+  await db.account.delete({ where: { id, userId } });
 }
 
 export async function setSortOrders(updates: readonly { id: string; sortOrder: number }[]): Promise<void> {
-  await db.$transaction(updates.map(({ id, sortOrder }) => db.account.update({ where: { id }, data: { sortOrder } })));
+  const { userId } = await requireSession();
+  await db.$transaction(updates.map(({ id, sortOrder }) => db.account.update({ where: { id, userId }, data: { sortOrder } })));
 }

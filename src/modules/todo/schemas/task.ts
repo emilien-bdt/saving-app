@@ -24,6 +24,8 @@ export type ParsedTaskInput = z.output<typeof taskInputSchema>;
 export const listInputSchema = z.object({
   name: z.string().trim().min(1, "Nom obligatoire").max(60, "60 caractères maximum"),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide"),
+  /** Shared with the household (every member sees its tasks). */
+  shared: z.boolean().default(false),
 });
 
 export type ListInput = z.input<typeof listInputSchema>;

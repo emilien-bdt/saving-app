@@ -14,17 +14,24 @@ export const importRefOf = (meal: { date: Date; slot: string }) => `excel:${toIs
 export async function applyMenuImport(
   meals: readonly ResolvedMeal[],
   catalogue: ReadonlyMap<string, string>,
+  householdId: string,
 ): Promise<{ dishes: number; created: number; skipped: number }> {
   const dishIds = new Map<string, string>();
   for (const [key, name] of catalogue) {
-    const dish = await db.repasDish.upsert({ where: { key }, create: { key, name }, update: {}, select: { id: true } });
+    const dish = await db.repasDish.upsert({
+      where: { householdId_key: { householdId, key } },
+      create: { householdId, key, name },
+      update: {},
+      select: { id: true },
+    });
     dishIds.set(key, dish.id);
   }
 
   const data = meals.map((meal) =>
     meal.kind === "OUT"
-      ? { date: meal.date, slot: meal.slot, kind: meal.kind, dishId: null, label: meal.label, note: meal.note, status: "VALIDATED" as const, importRef: importRefOf(meal) }
+      ? { householdId, date: meal.date, slot: meal.slot, kind: meal.kind, dishId: null, label: meal.label, note: meal.note, status: "VALIDATED" as const, importRef: importRefOf(meal) }
       : {
+          householdId,
           date: meal.date,
           slot: meal.slot,
           kind: meal.kind,
@@ -41,7 +48,7 @@ export async function applyMenuImport(
   const withSides = meals.filter((meal) => meal.kind !== "OUT" && meal.sides.length > 0);
   if (withSides.length > 0) {
     const created = await db.repasMeal.findMany({
-      where: { importRef: { in: withSides.map(importRefOf) }, sides: { none: {} } },
+      where: { householdId, importRef: { in: withSides.map(importRefOf) }, sides: { none: {} } },
       select: { id: true, importRef: true },
     });
     const mealIdByRef = new Map(created.map((row) => [row.importRef, row.id]));
@@ -55,8 +62,8 @@ export async function applyMenuImport(
         let ingredientId = sideIds.get(key);
         if (!ingredientId) {
           const ingredient = await db.repasIngredient.upsert({
-            where: { key },
-            create: { key, name, aisle: guessAisle(name), side: true },
+            where: { householdId_key: { householdId, key } },
+            create: { householdId, key, name, aisle: guessAisle(name), side: true },
             update: {},
             select: { id: true },
           });
@@ -72,15 +79,15 @@ export async function applyMenuImport(
 }
 
 /** Normalised names of the side list (to split "dish + sides" at import). */
-export async function getSideKeys(): Promise<Set<string>> {
-  const rows = await db.repasIngredient.findMany({ where: { side: true }, select: { key: true } });
+export async function getSideKeys(householdId: string): Promise<Set<string>> {
+  const rows = await db.repasIngredient.findMany({ where: { householdId, side: true }, select: { key: true } });
   return new Set(rows.map((row) => row.key));
 }
 
 /** Removes the imported meals (manual ones stay) and the dishes left unused. */
-export async function deleteMenuImports(): Promise<number> {
-  const { count } = await db.repasMeal.deleteMany({ where: { importRef: { not: null } } });
-  await db.repasDish.deleteMany({ where: { meals: { none: {} } } });
+export async function deleteMenuImports(householdId: string): Promise<number> {
+  const { count } = await db.repasMeal.deleteMany({ where: { householdId, importRef: { not: null } } });
+  await db.repasDish.deleteMany({ where: { householdId, meals: { none: {} } } });
   return count;
 }
 
@@ -88,15 +95,19 @@ export async function deleteMenuImports(): Promise<number> {
  * Ingredients guessed from the Excel shopping notes, for dishes that have none
  * yet (a dish already filled in by hand is never touched). Marked "suggested".
  */
-export async function applyIngredientSuggestions(suggestions: ReadonlyMap<string, readonly SuggestedIngredient[]>): Promise<number> {
+export async function applyIngredientSuggestions(
+  suggestions: ReadonlyMap<string, readonly SuggestedIngredient[]>,
+  householdId: string,
+): Promise<number> {
   let filled = 0;
   for (const [key, items] of suggestions) {
-    const dish = await db.repasDish.findUnique({ where: { key }, select: { id: true, _count: { select: { ingredients: true } } } });
+    const dish = await db.repasDish.findUnique({ where: { householdId_key: { householdId, key } }, select: { id: true, _count: { select: { ingredients: true } } } });
     if (!dish || dish._count.ingredients > 0 || items.length === 0) continue;
     for (const [index, item] of items.entries()) {
       const ingredient = await db.repasIngredient.upsert({
-        where: { key: ingredientKey(item.name) },
+        where: { householdId_key: { householdId, key: ingredientKey(item.name) } },
         create: {
+          householdId,
           key: ingredientKey(item.name),
           name: item.name,
           aisle: guessAisle(item.name),

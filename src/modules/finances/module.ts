@@ -1,6 +1,7 @@
 import { TrendingUp } from "lucide-react";
 import type { AppModule } from "@/modules/types";
 import { FinancesHomeWidget } from "./components/home-widget";
+import { setupFinancesForUser } from "./data/setup";
 
 export const financesModule: AppModule = {
   id: "finances",
@@ -10,4 +11,5 @@ export const financesModule: AppModule = {
   icon: TrendingUp,
   tileClass: "bg-app-finances",
   widgets: [{ id: "finances", title: "Finances", href: "/finances", size: "half", order: 30, component: FinancesHomeWidget }],
+  setupUser: setupFinancesForUser,
 };

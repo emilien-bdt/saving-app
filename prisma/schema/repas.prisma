@@ -28,9 +28,11 @@ enum RepasMealStatus {
 
 model RepasDish {
   id        String      @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name      String
   /// Normalised name (domain/dish-key.ts), unique: "Pâtes carbo" = "pates carbo".
-  key       String      @unique
+  key       String
   /// Archived dishes are never proposed by the generator.
   archived  Boolean     @default(false)
   createdAt DateTime    @default(now())
@@ -39,6 +41,7 @@ model RepasDish {
   ingredients RepasDishIngredient[]
   photo       RepasDishPhoto?
 
+  @@unique([householdId, key])
   @@map("repas_dish")
 }
 
@@ -56,6 +59,8 @@ model RepasDishPhoto {
 
 model RepasMeal {
   id        String          @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   date      DateTime        @db.Date
   slot      RepasSlot
   kind      RepasMealKind
@@ -70,7 +75,7 @@ model RepasMeal {
   updatedAt DateTime        @updatedAt
   sides     RepasMealSide[]
 
-  @@unique([date, slot])
+  @@unique([householdId, date, slot])
   @@index([dishId])
   @@map("repas_meal")
 }
@@ -99,9 +104,11 @@ enum RepasUnit {
 /// Shared ingredient catalogue: the same ingredient adds up across dishes.
 model RepasIngredient {
   id         String                @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   name       String
   /// Normalised name (domain/ingredients.ts ingredientKey): "Œufs" = "oeuf".
-  key        String                @unique
+  key        String
   aisle      RepasAisle            @default(AUTRE)
   /// Unit of every amount of this ingredient.
   unit       RepasUnit             @default(PIECE)
@@ -117,6 +124,7 @@ model RepasIngredient {
   meals      RepasMealSide[]
   shopping   RepasShoppingItem[]
 
+  @@unique([householdId, key])
   @@map("repas_ingredient")
 }
 
@@ -164,6 +172,8 @@ enum RepasShoppingSource {
 /// One line of a week's shopping list, per ingredient.
 model RepasShoppingItem {
   id           String              @id @default(cuid())
+  householdId String
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
   /// Monday of the week.
   weekStart    DateTime            @db.Date
   ingredientId String
@@ -178,6 +188,7 @@ model RepasShoppingItem {
   updatedAt    DateTime            @updatedAt
 
   @@unique([weekStart, ingredientId])
+  @@index([householdId, weekStart])
   @@index([ingredientId])
   @@map("repas_shopping_item")
 }

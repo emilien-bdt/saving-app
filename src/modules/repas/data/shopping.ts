@@ -1,3 +1,4 @@
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { cleanDishName } from "../domain/dish-key";
 import { guessAisle, ingredientKey } from "../domain/ingredients";
@@ -16,13 +17,14 @@ const ingredientSelect = { id: true, name: true, unit: true, aisle: true, packAm
 
 /** Everything the list of the week (Monday → Sunday) is computed from. */
 export async function getShoppingData(monday: Date): Promise<ShoppingData> {
+  const { householdId } = await requireSession();
   const [mealRows, stored] = await Promise.all([
     db.repasMeal.findMany({
-      where: { date: { gte: monday, lte: addDays(monday, 6) } },
+      where: { householdId, date: { gte: monday, lte: addDays(monday, 6) } },
       select: { date: true, slot: true, kind: true, dishId: true, sides: { select: { ingredientId: true } } },
     }),
     db.repasShoppingItem.findMany({
-      where: { weekStart: monday },
+      where: { householdId, weekStart: monday },
       select: { ingredientId: true, source: true, amount: true, checked: true, removed: true },
     }),
   ]);
@@ -30,7 +32,7 @@ export async function getShoppingData(monday: Date): Promise<ShoppingData> {
 
   const dishIds = [...new Set(meals.map((meal) => meal.dishId).filter((id): id is string => id !== null))];
   const dishes = await db.repasDish.findMany({
-    where: { id: { in: dishIds } },
+    where: { householdId, id: { in: dishIds } },
     select: { id: true, name: true, ingredients: { orderBy: { sortOrder: "asc" }, select: { ingredientId: true, amount: true } } },
   });
   const recipes = new Map(dishes.map((dish) => [dish.id, { name: dish.name, ingredients: dish.ingredients }]));
@@ -40,30 +42,33 @@ export async function getShoppingData(monday: Date): Promise<ShoppingData> {
     ...meals.flatMap((meal) => meal.sides),
     ...stored.map((item) => item.ingredientId),
   ]);
-  const ingredientRows = await db.repasIngredient.findMany({ where: { id: { in: [...ingredientIds] } }, select: ingredientSelect });
+  const ingredientRows = await db.repasIngredient.findMany({ where: { householdId, id: { in: [...ingredientIds] } }, select: ingredientSelect });
   return { meals, recipes, ingredients: new Map(ingredientRows.map((row) => [row.id, row])), stored };
 }
 
 /** Basics, in the order of the drive aisles then by name. */
 export async function getStapleOptions(): Promise<SideOption[]> {
-  return db.repasIngredient.findMany({ where: { staple: true }, select: { id: true, name: true }, orderBy: [{ aisle: "asc" }, { name: "asc" }] });
+  const { householdId } = await requireSession();
+  return db.repasIngredient.findMany({ where: { householdId, staple: true }, select: { id: true, name: true }, orderBy: [{ aisle: "asc" }, { name: "asc" }] });
 }
 
 export async function setStaple(name: string, staple: boolean): Promise<void> {
+  const { householdId } = await requireSession();
   const key = ingredientKey(name);
   await db.repasIngredient.upsert({
-    where: { key },
-    create: { key, name: cleanDishName(name), aisle: guessAisle(name), staple },
+    where: { householdId_key: { householdId, key } },
+    create: { householdId, key, name: cleanDishName(name), aisle: guessAisle(name), staple },
     update: { staple },
   });
 }
 
 /** Existing ingredient with that name, or a new one (aisle guessed). */
 export async function findOrCreateIngredient(name: string): Promise<string> {
+  const { householdId } = await requireSession();
   const key = ingredientKey(name);
   const ingredient = await db.repasIngredient.upsert({
-    where: { key },
-    create: { key, name: cleanDishName(name), aisle: guessAisle(name) },
+    where: { householdId_key: { householdId, key } },
+    create: { householdId, key, name: cleanDishName(name), aisle: guessAisle(name) },
     update: {},
     select: { id: true },
   });
@@ -72,38 +77,52 @@ export async function findOrCreateIngredient(name: string): Promise<string> {
 
 type ItemChange = Partial<{ amount: number | null; checked: boolean; removed: boolean }>;
 
+/** The household of the signed-in person, once checked that the ingredient is theirs (else null). */
+async function householdOwning(ingredientId: string): Promise<string | null> {
+  const { householdId } = await requireSession();
+  const found = await db.repasIngredient.count({ where: { id: ingredientId, householdId } });
+  return found > 0 ? householdId : null;
+}
+
 /**
  * Records what was done on a line. `source` is used only when the row does
  * not exist yet (first action on a computed line = MEALS).
  */
 export async function upsertItem(monday: Date, ingredientId: string, source: ShoppingSource, change: ItemChange): Promise<void> {
+  const householdId = await householdOwning(ingredientId);
+  if (!householdId) return;
   await db.repasShoppingItem.upsert({
     where: { weekStart_ingredientId: { weekStart: monday, ingredientId } },
-    create: { weekStart: monday, ingredientId, source, ...change },
+    create: { householdId, weekStart: monday, ingredientId, source, ...change },
     update: change,
   });
 }
 
 /** Removes a basic or a manual line (a computed line is only marked "déjà au placard"). */
 export async function deleteItem(monday: Date, ingredientId: string): Promise<void> {
-  await db.repasShoppingItem.deleteMany({ where: { weekStart: monday, ingredientId, source: { not: "MEALS" } } });
+  const { householdId } = await requireSession();
+  await db.repasShoppingItem.deleteMany({ where: { householdId, weekStart: monday, ingredientId, source: { not: "MEALS" } } });
 }
 
 /** Unticks everything (new shopping trip with the same list). */
 export async function uncheckAll(monday: Date): Promise<void> {
-  await db.repasShoppingItem.updateMany({ where: { weekStart: monday }, data: { checked: false } });
+  const { householdId } = await requireSession();
+  await db.repasShoppingItem.updateMany({ where: { householdId, weekStart: monday }, data: { checked: false } });
 }
 
 /** Every known ingredient (autocompletion of the quick add). */
 export async function getIngredientNames(): Promise<SideOption[]> {
-  return db.repasIngredient.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const { householdId } = await requireSession();
+  return db.repasIngredient.findMany({ where: { householdId }, select: { id: true, name: true }, orderBy: { name: "asc" } });
 }
 
 /** "Déjà au placard" on a computed line (the row becomes a MEALS row), or back to buy. */
 export async function markRemoved(monday: Date, ingredientId: string, removed: boolean): Promise<void> {
+  const householdId = await householdOwning(ingredientId);
+  if (!householdId) return;
   await db.repasShoppingItem.upsert({
     where: { weekStart_ingredientId: { weekStart: monday, ingredientId } },
-    create: { weekStart: monday, ingredientId, source: "MEALS", removed },
+    create: { householdId, weekStart: monday, ingredientId, source: "MEALS", removed },
     update: removed ? { removed, source: "MEALS", checked: false } : { removed },
   });
 }

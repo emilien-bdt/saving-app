@@ -1,3 +1,4 @@
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 
 /** URL of a dish photo; the version makes the browser fetch it again after a change. */
@@ -5,8 +6,9 @@ export function dishPhotoUrl(dishId: string, updatedAt: Date): string {
   return `/repas/photo/${dishId}?v=${updatedAt.getTime()}`;
 }
 
-export function getDishPhoto(dishId: string) {
-  return db.repasDishPhoto.findUnique({ where: { dishId }, select: { mimeType: true, data: true, updatedAt: true } });
+export async function getDishPhoto(dishId: string) {
+  const { householdId } = await requireSession();
+  return db.repasDishPhoto.findFirst({ where: { dishId, dish: { householdId } }, select: { mimeType: true, data: true, updatedAt: true } });
 }
 
 export async function saveDishPhoto(dishId: string, mimeType: string, data: Uint8Array<ArrayBuffer>): Promise<void> {
@@ -14,9 +16,11 @@ export async function saveDishPhoto(dishId: string, mimeType: string, data: Uint
 }
 
 export async function deleteDishPhoto(dishId: string): Promise<void> {
-  await db.repasDishPhoto.deleteMany({ where: { dishId } });
+  const { householdId } = await requireSession();
+  await db.repasDishPhoto.deleteMany({ where: { dishId, dish: { householdId } } });
 }
 
 export async function dishExists(dishId: string): Promise<boolean> {
-  return (await db.repasDish.count({ where: { id: dishId } })) > 0;
+  const { householdId } = await requireSession();
+  return (await db.repasDish.count({ where: { id: dishId, householdId } })) > 0;
 }

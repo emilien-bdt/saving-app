@@ -10,6 +10,7 @@ import { LIST_COLORS } from "./colors";
 function ListForm({ list, onDone }: { list: ListItem | null; onDone: () => void }) {
   const [name, setName] = useState(list?.name ?? "");
   const [color, setColor] = useState(list?.color ?? LIST_COLORS[6]);
+  const [shared, setShared] = useState(list?.shared ?? false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -19,7 +20,7 @@ function ListForm({ list, onDone }: { list: ListItem | null; onDone: () => void 
       onSubmit={(event) => {
         event.preventDefault();
         startTransition(async () => {
-          const result = await saveList(list?.id ?? null, { name, color });
+          const result = await saveList(list?.id ?? null, { name, color, shared });
           if (!result.ok) {
             setError(result.error);
             return;
@@ -66,6 +67,15 @@ function ListForm({ list, onDone }: { list: ListItem | null; onDone: () => void 
           />
         ))}
       </div>
+      {!list || list.mine ? (
+        <label className="flex min-h-11 items-center justify-between gap-3 px-1 text-[15px]">
+          <span>
+            Partager avec le foyer
+            <span className="block text-[13px] text-muted-foreground">Les membres de ton foyer voient et cochent ses tâches.</span>
+          </span>
+          <input type="checkbox" role="switch" checked={shared} onChange={(event) => setShared(event.target.checked)} className="ios-switch" />
+        </label>
+      ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </form>
   );
@@ -98,7 +108,10 @@ export function ListsManager({ lists }: { lists: ListItem[] }) {
             ) : (
               <li key={list.id} className="flex min-h-12 items-center gap-1 py-1 pr-2 pl-4">
                 <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: list.color }} aria-hidden />
-                <span className="ml-2 min-w-0 flex-1 truncate text-[17px]">{list.name}</span>
+                <span className="ml-2 min-w-0 flex-1 truncate text-[17px]">
+                  {list.name}
+                  {list.shared ? <span className="ml-1.5 rounded-full bg-muted px-2 py-0.5 align-middle text-xs text-muted-foreground">Foyer</span> : null}
+                </span>
                 <span className="text-sm text-muted-foreground tabular-nums">
                   {list.openCount} à faire
                 </span>

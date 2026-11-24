@@ -31,6 +31,8 @@ enum RecurrenceFrequency {
 
 model Account {
   id                  String      @id @default(cuid())
+  userId              String
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   name                String
   type                AccountType
   color               String      @default("#64748b")
@@ -53,11 +55,14 @@ model Account {
   interestRates          InterestRate[]
 
   @@index([parentId])
+  @@index([userId])
   @@map("finances_account")
 }
 
 model Category {
   id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   name       String
   kind       CategoryKind
   color      String       @default("#64748b")
@@ -73,13 +78,15 @@ model Category {
   transactions   Transaction[]
   recurringRules RecurringRule[]
 
-  @@unique([kind, parentId, name])
+  @@unique([userId, kind, parentId, name])
   @@index([parentId])
   @@map("finances_category")
 }
 
 model Transaction {
   id              String            @id @default(cuid())
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   date            DateTime          @db.Date
   /// Excel rows without a day (purchases spread over the month): dated on the last day of the month.
   dayUnknown      Boolean           @default(false)
@@ -112,7 +119,7 @@ model Transaction {
   updatedAt       DateTime          @updatedAt
 
   @@unique([recurringRuleId, occurrenceDate])
-  @@index([date])
+  @@index([userId, date])
   @@index([accountId, date])
   @@index([toAccountId, date])
   @@index([categoryId])
@@ -122,6 +129,8 @@ model Transaction {
 
 model RecurringRule {
   id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   label       String
   note        String?
   amountCents Int
@@ -145,6 +154,7 @@ model RecurringRule {
 
   transactions Transaction[]
 
+  @@index([userId])
   @@map("finances_recurring_rule")
 }
 
@@ -166,10 +176,13 @@ model InterestRate {
 
 model ImportBatch {
   id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   fileName     String
   importedAt   DateTime      @default(now())
   rowCount     Int
   transactions Transaction[]
 
+  @@index([userId])
   @@map("finances_import_batch")
 }

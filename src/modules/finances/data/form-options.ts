@@ -1,20 +1,23 @@
 import { cache } from "react";
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { buildLabelSuggestions } from "../domain/suggestions";
 import type { AccountOption, CategoryOption, TransactionFormOptions } from "../view-models";
 
 /** Accounts, categories (with their usage) and label suggestions for the entry form and the filters. */
 export const getTransactionFormOptions = cache(async (): Promise<TransactionFormOptions> => {
+  const { userId } = await requireSession();
   const [accounts, categories, categoryUsage, labelUsage] = await Promise.all([
-    db.account.findMany({ orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
+    db.account.findMany({ where: { userId }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
     db.category.findMany({
+      where: { userId },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
       include: { parent: { select: { name: true } }, _count: { select: { children: true } } },
     }),
-    db.transaction.groupBy({ by: ["categoryId"], _count: { _all: true } }),
+    db.transaction.groupBy({ by: ["categoryId"], where: { userId }, _count: { _all: true } }),
     db.transaction.groupBy({
       by: ["labelKey", "label", "type", "categoryId"],
-      where: { type: { not: "TRANSFER" } },
+      where: { userId, type: { not: "TRANSFER" } },
       _count: { _all: true },
       _max: { date: true },
     }),

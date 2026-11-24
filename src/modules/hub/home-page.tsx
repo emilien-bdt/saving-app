@@ -21,15 +21,16 @@ function todayHeading(): string {
  * Not a module itself: it only reads the registry.
  */
 export async function HomePage() {
-  await requireSession();
+  const scope = await requireSession();
   const widgets = appModules
+    .filter((module) => !scope.disabledModules.includes(module.id))
     .flatMap((module) => (module.widgets ?? []).map((widget) => ({ widget, module })))
     .sort((a, b) => a.widget.order - b.widget.order);
 
   return (
     <>
-      <AppTabBar apps={getNavApps()} />
-      <PageHeader title="Accueil" eyebrow={todayHeading()} actions={<ProfileMenu />} />
+      <AppTabBar apps={getNavApps(scope.disabledModules)} />
+      <PageHeader title="Accueil" eyebrow={todayHeading()} actions={<ProfileMenu name={scope.name} />} />
       <main className={ios.page}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {widgets.map(({ widget, module }) => {

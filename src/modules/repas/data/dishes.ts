@@ -1,3 +1,4 @@
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { cleanDishName, dishKey } from "../domain/dish-key";
 import { type Aisle, findLikelyDuplicates, guessAisle, ingredientKey, type Unit } from "../domain/ingredients";
@@ -7,10 +8,11 @@ import { dishPhotoUrl } from "./photos";
 
 /** Existing dish with the same normalised name, or a new one. */
 export async function findOrCreateDish(name: string): Promise<string> {
+  const { householdId } = await requireSession();
   const key = dishKey(name);
   const dish = await db.repasDish.upsert({
-    where: { key },
-    create: { key, name: cleanDishName(name) },
+    where: { householdId_key: { householdId, key } },
+    create: { householdId, key, name: cleanDishName(name) },
     update: { archived: false },
     select: { id: true },
   });
@@ -19,8 +21,9 @@ export async function findOrCreateDish(name: string): Promise<string> {
 
 /** Active dishes, most eaten first (suggestions and generator candidates). */
 export async function getDishOptions(): Promise<DishOption[]> {
+  const { householdId } = await requireSession();
   const rows = await db.repasDish.findMany({
-    where: { archived: false },
+    where: { householdId, archived: false },
     select: { id: true, name: true, _count: { select: { meals: { where: { kind: "DISH" } } } } },
   });
   return rows
@@ -30,8 +33,10 @@ export async function getDishOptions(): Promise<DishOption[]> {
 
 /** Every dish (archived included) with its use and its ingredients, most cooked first. */
 export async function getDishItems(): Promise<DishItem[]> {
+  const { householdId } = await requireSession();
   const [dishes, cooked, used] = await Promise.all([
     db.repasDish.findMany({
+      where: { householdId },
       select: {
         id: true,
         name: true,
@@ -43,8 +48,8 @@ export async function getDishItems(): Promise<DishItem[]> {
         },
       },
     }),
-    db.repasMeal.groupBy({ by: ["dishId"], where: { kind: "DISH" }, _count: { _all: true } }),
-    db.repasMeal.groupBy({ by: ["dishId"], where: { dishId: { not: null } }, _count: { _all: true }, _max: { date: true } }),
+    db.repasMeal.groupBy({ by: ["dishId"], where: { householdId, kind: "DISH" }, _count: { _all: true } }),
+    db.repasMeal.groupBy({ by: ["dishId"], where: { householdId, dishId: { not: null } }, _count: { _all: true }, _max: { date: true } }),
   ]);
   const cookedById = new Map(cooked.map((row) => [row.dishId, row._count._all]));
   const usedById = new Map(used.map((row) => [row.dishId, row]));
@@ -79,7 +84,9 @@ export async function getDishItems(): Promise<DishItem[]> {
 }
 
 export async function getIngredientOptions(): Promise<IngredientOption[]> {
+  const { householdId } = await requireSession();
   const rows = await db.repasIngredient.findMany({
+    where: { householdId },
     select: { id: true, name: true, unit: true, aisle: true, packAmount: true },
     orderBy: { name: "asc" },
   });
@@ -97,18 +104,19 @@ export async function saveDish(
   id: string,
   data: SaveDishData,
 ): Promise<{ ok: true } | { ok: false; reason: "missing" } | { ok: false; reason: "name_taken"; other: string }> {
+  const { householdId } = await requireSession();
   const key = dishKey(data.name);
-  const other = await db.repasDish.findFirst({ where: { key, id: { not: id } }, select: { name: true } });
+  const other = await db.repasDish.findFirst({ where: { householdId, key, id: { not: id } }, select: { name: true } });
   if (other) return { ok: false, reason: "name_taken", other: other.name };
 
   return db.$transaction(async (tx) => {
-    const { count } = await tx.repasDish.updateMany({ where: { id }, data: { name: cleanDishName(data.name), key, archived: data.archived } });
+    const { count } = await tx.repasDish.updateMany({ where: { id, householdId }, data: { name: cleanDishName(data.name), key, archived: data.archived } });
     if (count === 0) return { ok: false as const, reason: "missing" as const };
     await tx.repasDishIngredient.deleteMany({ where: { dishId: id } });
     for (const [index, item] of data.ingredients.entries()) {
       const ingredient = await tx.repasIngredient.upsert({
-        where: { key: ingredientKey(item.name) },
-        create: { key: ingredientKey(item.name), name: cleanDishName(item.name), unit: item.unit, aisle: item.aisle },
+        where: { householdId_key: { householdId, key: ingredientKey(item.name) } },
+        create: { householdId, key: ingredientKey(item.name), name: cleanDishName(item.name), unit: item.unit, aisle: item.aisle },
         update: { unit: item.unit, aisle: item.aisle },
         select: { id: true },
       });
@@ -123,10 +131,11 @@ export async function saveDish(
 /** Moves every meal and the missing ingredients of `sourceId` to `targetId`, then deletes the source. */
 export async function mergeDishes(sourceId: string, targetId: string): Promise<boolean> {
   if (sourceId === targetId) return false;
+  const { householdId } = await requireSession();
   return db.$transaction(async (tx) => {
     const [source, target] = await Promise.all([
-      tx.repasDish.findUnique({ where: { id: sourceId }, select: { id: true } }),
-      tx.repasDish.findUnique({ where: { id: targetId }, select: { ingredients: { select: { ingredientId: true } } } }),
+      tx.repasDish.findUnique({ where: { id: sourceId, householdId }, select: { id: true } }),
+      tx.repasDish.findUnique({ where: { id: targetId, householdId }, select: { ingredients: { select: { ingredientId: true } } } }),
     ]);
     if (!source || !target) return false;
     await tx.repasMeal.updateMany({ where: { dishId: sourceId }, data: { dishId: targetId } });
@@ -141,18 +150,20 @@ export async function mergeDishes(sourceId: string, targetId: string): Promise<b
 
 /** Only a dish never eaten can be deleted (otherwise: archive it). */
 export async function deleteUnusedDish(id: string): Promise<boolean> {
-  const { count } = await db.repasDish.deleteMany({ where: { id, meals: { none: {} } } });
+  const { householdId } = await requireSession();
+  const { count } = await db.repasDish.deleteMany({ where: { id, householdId, meals: { none: {} } } });
   return count > 0;
 }
 
 /** Ingredient ids of the given side items (unknown ones are created as sides). */
 export async function findOrCreateSides(names: readonly string[]): Promise<string[]> {
+  const { householdId } = await requireSession();
   const ids: string[] = [];
   for (const name of names) {
     const key = ingredientKey(name);
     const ingredient = await db.repasIngredient.upsert({
-      where: { key },
-      create: { key, name: cleanDishName(name), aisle: guessAisle(name), side: true },
+      where: { householdId_key: { householdId, key } },
+      create: { householdId, key, name: cleanDishName(name), aisle: guessAisle(name), side: true },
       update: {},
       select: { id: true },
     });
@@ -163,8 +174,9 @@ export async function findOrCreateSides(names: readonly string[]): Promise<strin
 
 /** The side list (Repas › Paramètres), most used first. */
 export async function getSideOptions(): Promise<SideOption[]> {
+  const { householdId } = await requireSession();
   const rows = await db.repasIngredient.findMany({
-    where: { side: true },
+    where: { householdId, side: true },
     select: { id: true, name: true, _count: { select: { meals: true } } },
   });
   return rows
@@ -173,10 +185,11 @@ export async function getSideOptions(): Promise<SideOption[]> {
 }
 
 export async function setSide(name: string, side: boolean): Promise<void> {
+  const { householdId } = await requireSession();
   const key = ingredientKey(name);
   await db.repasIngredient.upsert({
-    where: { key },
-    create: { key, name: cleanDishName(name), aisle: guessAisle(name), side },
+    where: { householdId_key: { householdId, key } },
+    create: { householdId, key, name: cleanDishName(name), aisle: guessAisle(name), side },
     update: { side },
   });
 }
@@ -186,13 +199,14 @@ export async function setSide(name: string, side: boolean): Promise<void> {
  * no dish and get the side; its leftovers become meals with that side.
  */
 export async function dishToSide(dishId: string): Promise<boolean> {
+  const { householdId } = await requireSession();
   return db.$transaction(async (tx) => {
-    const dish = await tx.repasDish.findUnique({ where: { id: dishId }, select: { name: true, meals: { select: { id: true } } } });
+    const dish = await tx.repasDish.findUnique({ where: { id: dishId, householdId }, select: { name: true, meals: { select: { id: true } } } });
     if (!dish) return false;
     const key = ingredientKey(dish.name);
     const ingredient = await tx.repasIngredient.upsert({
-      where: { key },
-      create: { key, name: dish.name, aisle: guessAisle(dish.name), side: true },
+      where: { householdId_key: { householdId, key } },
+      create: { householdId, key, name: dish.name, aisle: guessAisle(dish.name), side: true },
       update: { side: true },
       select: { id: true },
     });

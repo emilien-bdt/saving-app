@@ -12,4 +12,13 @@ export type TaskItem = {
   createdAtIso: string;
 };
 
-export type ListItem = { id: string; name: string; color: string; openCount: number };
+export type ListItem = {
+  id: string;
+  name: string;
+  color: string;
+  openCount: number;
+  /** Shared with the household. */
+  shared: boolean;
+  /** Created by the signed-in person (only they can change the sharing). */
+  mine: boolean;
+};

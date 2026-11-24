@@ -83,7 +83,8 @@ async function main(): Promise<number> {
   // Side list from the database (Repas › Paramètres), the default one for a dry run.
   const dryRun = flags.has("--dry-run");
   const repository = dryRun ? null : await import("../src/modules/repas/data/import-repository");
-  const savedSides = repository ? await repository.getSideKeys() : new Set<string>();
+  const owner = dryRun ? null : await (await import("../src/shared/lib/cli-owner")).getCliOwner();
+  const savedSides = repository && owner ? await repository.getSideKeys(owner.householdId) : new Set<string>();
   const { meals, warnings } = mergeAndResolve(files, savedSides.size > 0 ? savedSides : DEFAULT_SIDE_KEYS);
   const catalogue = buildDishCatalogue(meals);
   const count = (kind: string) => meals.filter((meal) => meal.kind === kind).length;
@@ -101,7 +102,7 @@ async function main(): Promise<number> {
   if (skipped.length > 0) allWarnings.push(`${skipped.length} fichier(s) sans repas ignoré(s)`);
   if (allWarnings.length > 0) console.log(`\nAvertissements :\n${allWarnings.map((w) => `  ⚠ ${w}`).join("\n")}`);
 
-  if (!repository) {
+  if (!repository || !owner) {
     console.log("\n--dry-run : rien n'a été écrit en base.");
     return 0;
   }
@@ -109,14 +110,14 @@ async function main(): Promise<number> {
   const { db } = await import("../src/shared/lib/db");
   const { applyIngredientSuggestions, applyMenuImport, deleteMenuImports } = repository;
   try {
-    if (flags.has("--replace")) console.log(`\n--replace : ${await deleteMenuImports()} repas importés supprimés.`);
-    const result = await applyMenuImport(meals, catalogue);
+    if (flags.has("--replace")) console.log(`\n--replace : ${await deleteMenuImports(owner.householdId)} repas importés supprimés.`);
+    const result = await applyMenuImport(meals, catalogue, owner.householdId);
     console.log(`\nImport terminé : ${result.dishes} plats, ${result.created} repas créés, ${result.skipped} cases déjà remplies conservées.`);
     const suggestions = suggestDishIngredients(
       meals.map((meal) => ({ date: meal.date, slot: meal.slot, kind: meal.kind, dishName: meal.kind === "OUT" ? null : meal.dishName })),
       files.flatMap((file) => file.shopping),
     );
-    const filled = await applyIngredientSuggestions(suggestions);
+    const filled = await applyIngredientSuggestions(suggestions, owner.householdId);
     console.log(`Ingrédients suggérés (à valider dans Repas › Plats) : ${filled} plats pré-remplis.`);
     return 0;
   } finally {

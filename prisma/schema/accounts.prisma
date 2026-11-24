@@ -1,0 +1,94 @@
+// Comptes et foyers (étape 20). Each person has an account; personal data (Finances,
+// To do) belongs to the user, shared data (Repas, Courses, shared To do lists) belongs
+// to the user's current household. CHECK constraints live in the migration SQL.
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum InvitationKind {
+  /// Admin → a new person: creates an account.
+  ACCOUNT
+  /// Member → someone else: join the member's household.
+  HOUSEHOLD
+  /// Admin → a member: choose a new password.
+  PASSWORD_RESET
+}
+
+model User {
+  id              String     @id @default(cuid())
+  /// What the person types to sign in: an email ("admin" for the account created by the migration).
+  login           String     @unique
+  name            String
+  /// null = no password yet (the migrated admin signs in with the former AUTH_PASSWORD_HASH).
+  passwordHash    String?
+  role            UserRole   @default(MEMBER)
+  /// Deactivated accounts cannot sign in (their data is kept).
+  active          Boolean    @default(true)
+  /// Module ids turned off by the admin (a new module is on for everyone).
+  disabledModules String[]   @default([])
+  /// Bumped to sign out every device (password change, deactivation).
+  sessionVersion  Int        @default(0)
+  householdId     String
+  household       Household  @relation("HouseholdMembers", fields: [householdId], references: [id], onDelete: Restrict)
+  soloHousehold   Household? @relation("SoloHousehold")
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  invitationsSent     Invitation[]    @relation("InvitationCreatedBy")
+  passwordResets      Invitation[]    @relation("InvitationTarget")
+  financeAccounts     Account[]
+  financeCategories   Category[]
+  financeTransactions Transaction[]
+  recurringRules      RecurringRule[]
+  importBatches       ImportBatch[]
+  todoLists           TodoList[]
+  todoTasks           TodoTask[]
+
+  @@index([householdId])
+  @@map("account_user")
+}
+
+model Household {
+  id          String   @id @default(cuid())
+  /// Set when this is someone's own household: never deleted, they come back to it when they leave another one.
+  soloOwnerId String?  @unique
+  soloOwner   User?    @relation("SoloHousehold", fields: [soloOwnerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members        User[]              @relation("HouseholdMembers")
+  invitations    Invitation[]
+  todoLists      TodoList[]
+  repasDishes    RepasDish[]
+  repasMeals     RepasMeal[]
+  repasIngredients RepasIngredient[]
+  repasShopping  RepasShoppingItem[]
+
+  @@map("account_household")
+}
+
+/// Single-use link. Only the SHA-256 of its secret is stored (the link is shown once).
+model Invitation {
+  id           String         @id @default(cuid())
+  kind         InvitationKind
+  tokenHash    String         @unique
+  /// ACCOUNT: the person's name, as typed by the admin.
+  name         String?
+  /// HOUSEHOLD: the household to join.
+  householdId  String?
+  household    Household?     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  /// PASSWORD_RESET: whose password.
+  targetUserId String?
+  targetUser   User?          @relation("InvitationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  createdById  String
+  createdBy    User           @relation("InvitationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  usedAt       DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@index([createdById])
+  @@map("account_invitation")
+}

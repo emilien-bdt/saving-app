@@ -42,11 +42,13 @@ async function main(): Promise<number> {
 
   const { db } = await import("../src/shared/lib/db");
   const { applyImportPlan, deleteAllImports } = await import("../src/modules/finances/data/import-repository");
+  const { getCliOwner } = await import("../src/shared/lib/cli-owner");
   try {
+    const { userId } = await getCliOwner();
     if (flags.has("--replace")) {
-      console.log(`\n--replace : ${await deleteAllImports()} transactions importées supprimées.`);
+      console.log(`\n--replace : ${await deleteAllImports(userId)} transactions importées supprimées.`);
     }
-    const result = await applyImportPlan(plan);
+    const result = await applyImportPlan(plan, userId);
     console.log(`\nImport terminé : ${result.created} transactions créées, ${result.alreadyImported} déjà présentes.`);
     for (const file of result.files) console.log(`  • ${file.fileName} : ${file.created}`);
     return 0;

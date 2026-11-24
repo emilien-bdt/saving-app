@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { requireSession } from "@/shared/auth/server";
 import { db } from "@/shared/lib/db";
 import { todayIso } from "@/shared/lib/today";
 import { buildInterestTransactions, type InterestRateInput, type InterestTransaction } from "../domain/interest";
@@ -8,7 +9,8 @@ const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 /** Rates of every account, by account (date order). */
 export async function getInterestRates(): Promise<Map<string, { id: string; validFromIso: string; rateBp: number }[]>> {
-  const rates = await db.interestRate.findMany({ orderBy: [{ accountId: "asc" }, { validFrom: "asc" }] });
+  const { userId } = await requireSession();
+  const rates = await db.interestRate.findMany({ where: { account: { userId } }, orderBy: [{ accountId: "asc" }, { validFrom: "asc" }] });
   const byAccount = new Map<string, { id: string; validFromIso: string; rateBp: number }[]>();
   for (const rate of rates) {
     const list = byAccount.get(rate.accountId) ?? [];
@@ -26,14 +28,15 @@ export const getInterestTransactions = cache(async (): Promise<InterestTransacti
   const ratesByAccount: Map<string, InterestRateInput[]> = await getInterestRates();
   if (ratesByAccount.size === 0) return [];
   const accountIds = [...ratesByAccount.keys()];
+  const { userId } = await requireSession();
 
   const [accounts, transactions, last] = await Promise.all([
-    db.account.findMany({ where: { id: { in: accountIds } }, select: { id: true, initialBalanceCents: true } }),
+    db.account.findMany({ where: { userId, id: { in: accountIds } }, select: { id: true, initialBalanceCents: true } }),
     db.transaction.findMany({
-      where: { OR: [{ accountId: { in: accountIds } }, { toAccountId: { in: accountIds } }] },
+      where: { userId, OR: [{ accountId: { in: accountIds } }, { toAccountId: { in: accountIds } }] },
       select: { date: true, type: true, status: true, amountCents: true, accountId: true, toAccountId: true },
     }),
-    db.transaction.aggregate({ _max: { date: true } }),
+    db.transaction.aggregate({ where: { userId }, _max: { date: true } }),
   ]);
 
   const today = todayIso();
@@ -51,7 +54,8 @@ export const getInterestTransactions = cache(async (): Promise<InterestTransacti
 });
 
 export async function findAccountForRates(accountId: string) {
-  return db.account.findUnique({ where: { id: accountId }, select: { id: true, type: true, parentId: true } });
+  const { userId } = await requireSession();
+  return db.account.findUnique({ where: { id: accountId, userId }, select: { id: true, type: true, parentId: true } });
 }
 
 /** One rate per account and date: adding a rate on an existing date replaces it. */
@@ -64,6 +68,7 @@ export async function upsertInterestRate(accountId: string, validFrom: Date, rat
 }
 
 export async function deleteInterestRate(id: string): Promise<boolean> {
-  const { count } = await db.interestRate.deleteMany({ where: { id } });
+  const { userId } = await requireSession();
+  const { count } = await db.interestRate.deleteMany({ where: { id, account: { userId } } });
   return count > 0;
 }

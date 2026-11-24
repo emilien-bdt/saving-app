@@ -6,11 +6,12 @@ import { verifySessionToken } from "@/shared/auth/session";
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const authenticated = token ? await verifySessionToken(token, getAuthConfig().sessionSecret) : false;
+  const authenticated = token ? (await verifySessionToken(token, getAuthConfig().sessionSecret)) !== null : false;
 
-  if (pathname === "/login") {
-    return authenticated ? NextResponse.redirect(new URL("/", request.url)) : NextResponse.next();
-  }
+  // Invitation links (sign-up, password reset) work without an account.
+  if (pathname.startsWith("/invitation/")) return NextResponse.next();
+  // The login page itself sends signed-in users home (it can check that the account is still active).
+  if (pathname === "/login") return NextResponse.next();
   if (authenticated) return NextResponse.next();
 
   const loginUrl = new URL("/login", request.url);

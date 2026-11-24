@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 18 : style iOS sur tout le site).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étapes 19 photos des plats et 20 comptes / foyers).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -11,7 +11,7 @@
 | Environnement | **En ligne** : https://save.emilienbourdet.fr (VPS OVH, compose principal de `/Serveur OVH - minecraft`, dossier `save` = clone git) ; mise à jour = `git pull` + `docker compose up -d --build save-migrate save-app` (voir `deploy/README.md`). Local (`npm run dev`) = tests uniquement. |
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
-| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : socle design fait (étape 18), comptes / foyers à suivre |
+| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : design (18), photos (19) et comptes / foyers (20) faits ; migrations 19-20 à appliquer en local puis sur le serveur |
 | Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
@@ -21,9 +21,11 @@
 - Navigation : onglets des apps en bas sur iPhone (Accueil · Finances · To do · Repas), barre du haut sur ordinateur ; dans un module : grand titre, ⚙︎ Paramètres, « + », pages en contrôle segmenté.
 - ⚠️ Rendu à valider sur l'iPhone.
 
-### Accès
-- Connexion par mot de passe unique (`/login`), session de 30 jours, déconnexion dans Paramètres.
-- `npm run auth:hash` choisit le mot de passe et remplit `.env`.
+### Comptes et foyers — `/parametres`, `/admin`, `/invitation/…`
+- Connexion par **email + mot de passe**, session de 30 jours. Compte migré : identifiant « admin » + ancien mot de passe, jusqu'à choisir email et mot de passe dans Réglages (bandeau d'invitation).
+- **Réglages** (pastille en haut de l'Accueil) : prénom, email, mot de passe (déconnecte les autres appareils), **Mon foyer** (membres, lien d'invitation à partager, quitter), Administration (admin), déconnexion.
+- **Administration** : inviter quelqu'un (lien à copier / partager), modules activés par personne (interrupteurs), lien pour changer un mot de passe, désactiver / réactiver. Ne montre ni les foyers ni les données.
+- Données : Finances et To do **personnels** ; Repas, Courses et listes To do **partagées** (interrupteur « Partager avec le foyer ») **au foyer**.
 - Installable sur iPhone (« Sur l'écran d'accueil »), s'ouvre sur l'Accueil (`/`).
 
 ### Accueil — `/`
@@ -75,6 +77,7 @@
 - Semaine (`?semaine=AAAA-Wss`) : sur iPhone, bande des 7 jours (point orange = repas proposés) + le jour choisi (aujourd'hui par défaut), cartes Midi / Soir avec « Autre plat » / « Valider », « Valider la journée » ; sur ordinateur, les 7 jours côte à côte.
 - Case : plat, reste (↺, pré-rempli avec le repas précédent) ou absent / dehors ; note facultative.
 - **Générer / Regénérer** : remplit les cases vides ou proposées depuis l'historique ; ↻ sur une case pour un autre plat ; cadenas = validé, jamais touché ; « Tout valider ».
+- **Photo du plat** : ajoutée depuis Plats ou depuis un repas (appareil photo ou photothèque), affichée sur la carte du repas, dans Plats et sur l'Accueil.
 - Glisser-déposer par la poignée ⋮⋮ (déplacer ou échanger) ; sur iPhone, seulement entre midi et soir du jour affiché.
 - « + Repas » partout (date + créneau au choix).
 - Widget Accueil : midi, soir, demain soir, repas prévus / validés de la semaine.
@@ -94,7 +97,7 @@
 ### Chantier prioritaire — refonte design + multi-comptes (cadré et validé le 24/11/2026)
 A. ~~Maquettes iPhone~~ (validées le 24/11/2026).
 B. ~~**Socle design iOS (étape 18)**~~ fait le 24/11/2026, appliqué à tout le site d'un coup (y compris Repas) ; reste à valider sur l'iPhone. Plus tard : gestes balayer pour cocher / supprimer, transitions entre pages.
-C. **Comptes, foyers, admin** : `User`, `Household`, invitations (admin → compte, membre → foyer), connexion email + mot de passe, page Admin (membres, modules par personne), Paramètres › Foyer (inviter, rejoindre, quitter) ; migration de mes données vers mon compte ; Repas / Courses / listes To do partagées rattachés au foyer, Finances et autres listes à la personne.
+C. ~~**Comptes, foyers, admin**~~ (étape 20, à valider à l'écran après migration) : `User`, `Household`, invitations (admin → compte, membre → foyer), connexion email + mot de passe, page Admin (membres, modules par personne), Paramètres › Foyer (inviter, rejoindre, quitter) ; migration de mes données vers mon compte ; Repas / Courses / listes To do partagées rattachés au foyer, Finances et autres listes à la personne.
 D. **Finitions par module** : Piloter repensé pour l'iPhone (graphiques), gestes balayer pour cocher / supprimer.
 
 ### Ensuite
@@ -150,3 +153,6 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
 | 18a | `28a9649` | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |
 | 18 | `77486af` | Style iOS sur tout le site : onglets des apps, grand titre, contrôle segmenté, `Sheet` (glisser pour fermer), tirer pour rafraîchir, Accueil en cartes (Repas, To do, Finances, Courses), Repas jour par jour sur iPhone, fin du style pâte à modeler |
+| — | `f8e3fbc` | Design iOS : corrections après contrôle à l'écran (débordement Piloter, boutons Repas) |
+| 19 | `eef8e9e` | Photo des plats (table `repas_dish_photo`, redimensionnement navigateur, route privée versionnée) |
+| 20 | (ce commit) | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |

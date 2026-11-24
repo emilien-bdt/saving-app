@@ -7,19 +7,31 @@ enum TodoPriority {
 }
 
 model TodoList {
-  id        String     @id @default(cuid())
-  name      String     @unique
+  id          String     @id @default(cuid())
+  /// Who created it (a personal list is only theirs).
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Set = shared with this household (every member sees and edits its tasks).
+  householdId String?
+  household   Household? @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  /// Unique per owner / household (case-insensitive): checked in code.
+  name      String
   color     String     @default("#64748b")
   sortOrder Int        @default(0)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   tasks     TodoTask[]
 
+  @@index([userId])
+  @@index([householdId])
   @@map("todo_list")
 }
 
 model TodoTask {
   id          String       @id @default(cuid())
+  /// Who created it; tasks of a shared list are seen by the whole household.
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   note        String?
   /// Optional due date; null = "Sans date".
@@ -35,5 +47,6 @@ model TodoTask {
 
   @@index([completedAt, dueDate])
   @@index([listId])
+  @@index([userId])
   @@map("todo_task")
 }
