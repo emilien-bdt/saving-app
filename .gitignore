@@ -56,3 +56,6 @@ next-env.d.ts
 
 # Claude desktop outputs
 /Claude outputs/
+
+# Exports de base (pg_dump) : jamais commités
+*.dump
