@@ -112,20 +112,20 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
     const quantity = lineQuantity(line);
     const computed = line.source === "MEALS";
     return (
-      <li key={line.ingredientId} className={`flex items-start gap-2 rounded-2xl px-1 py-1.5 ${line.checked ? "opacity-55" : ""}`}>
+      <li key={line.ingredientId} className={`flex items-center gap-1.5 rounded-xl py-0.5 ${line.checked ? "opacity-55" : ""}`}>
         <button
           type="button"
           role="checkbox"
           aria-checked={line.checked}
           aria-label={line.checked ? `${line.name} : remettre à acheter` : `${line.name} : pris`}
           onClick={() => run({ type: "check", id: line.ingredientId, checked: !line.checked }, () => setItemChecked(week, line.ingredientId, !line.checked))}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-full"
         >
-          {line.checked ? <CircleCheckBig className="size-7 text-emerald-600" aria-hidden /> : <Circle className="size-7 opacity-60" aria-hidden />}
+          {line.checked ? <CircleCheckBig className="size-5 text-emerald-600" aria-hidden /> : <Circle className="size-5 opacity-60" aria-hidden />}
         </button>
-        <div className="min-w-0 flex-1 pt-1.5">
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className={`text-lg font-bold ${line.checked ? "line-through" : ""}`}>{line.name}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className={`text-[0.95rem] font-semibold ${line.checked ? "line-through" : ""}`}>{line.name}</span>
             {editing?.id === line.ingredientId ? (
               <form
                 className="inline-flex items-center gap-1"
@@ -142,15 +142,15 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
                   inputMode="numeric"
                   aria-label={`Quantité de ${line.name} (${unitLabel(line.unit)})`}
                   placeholder="auto"
-                  className={`${clay.field} h-9 w-24`}
+                  className={`${clay.field} h-8 w-20 text-sm`}
                 />
-                <span className="text-sm opacity-75">{unitLabel(line.unit)}</span>
+                <span className="text-xs opacity-75">{unitLabel(line.unit)}</span>
               </form>
             ) : (
               <button
                 type="button"
                 onClick={() => setEditing({ id: line.ingredientId, value: line.overridden && line.amount !== null ? String(line.amount) : "" })}
-                className={`rounded-full px-2 text-base font-semibold underline decoration-dotted underline-offset-4 ${quantity ? "" : "opacity-60"}`}
+                className={`rounded-full px-1 text-sm font-medium underline decoration-dotted underline-offset-4 ${quantity ? "" : "opacity-60"}`}
                 title="Modifier la quantité"
               >
                 {quantity || "quantité ?"}
@@ -158,7 +158,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
               </button>
             )}
           </div>
-          {line.reasons.length > 0 ? <p className="truncate text-sm opacity-70">{line.reasons.join(" · ")}</p> : null}
+          {line.reasons.length > 0 ? <p className="truncate text-xs opacity-65">{line.reasons.join(" · ")}</p> : null}
         </div>
         <a
           href={coursesUSearchUrl(line.name)}
@@ -166,33 +166,33 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           rel="noopener noreferrer"
           aria-label={`Chercher ${line.name} sur Courses U`}
           title="Chercher sur Courses U"
-          className={`${clay.iconBtn} mt-1 shrink-0`}
+          className={`${clay.iconBtn} ${clay.iconBtnSm} shrink-0`}
         >
-          <ExternalLink className="size-4" aria-hidden />
+          <ExternalLink className="size-3.5" aria-hidden />
         </a>
         <button
           type="button"
           onClick={() => run({ type: "remove", id: line.ingredientId, computed }, () => removeItem(week, line.ingredientId, computed))}
           aria-label={computed ? `${line.name} : déjà au placard` : `Retirer ${line.name}`}
           title={computed ? "Déjà au placard" : "Retirer"}
-          className={`${clay.iconBtn} mt-1 shrink-0`}
+          className={`${clay.iconBtn} ${clay.iconBtnSm} shrink-0`}
         >
-          <X className="size-4" aria-hidden />
+          <X className="size-3.5" aria-hidden />
         </button>
       </li>
     );
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Link href={`/repas/courses?semaine=${previousWeek}`} aria-label="Semaine précédente" className={clay.iconBtn}>
             <ChevronLeft className="size-5" aria-hidden />
           </Link>
           <div className="px-1">
-            <h1 className="flex items-center gap-2 text-2xl font-extrabold sm:text-3xl">
-              <ShoppingBasket className="size-7 shrink-0" aria-hidden />
+            <h1 className="flex items-center gap-2 text-xl font-extrabold sm:text-2xl">
+              <ShoppingBasket className="size-6 shrink-0" aria-hidden />
               Courses · {title}
             </h1>
             <p className="text-sm font-medium opacity-70">
@@ -205,19 +205,19 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
         </div>
         <div className="flex flex-wrap items-center gap-3 pb-1">
           {done > 0 ? (
-            <button type="button" onClick={() => run({ type: "uncheckAll" }, () => uncheckAllItems(week))} className={`${clay.btn} ${clay.btnPlain}`}>
-              <RotateCcw className="size-5" aria-hidden />
+            <button type="button" onClick={() => run({ type: "uncheckAll" }, () => uncheckAllItems(week))} className={`${clay.btn} ${clay.btnPlain} ${clay.btnSm}`}>
+              <RotateCcw className="size-4" aria-hidden />
               Tout décocher
             </button>
           ) : null}
           {canShare ? (
-            <button type="button" onClick={share} className={`${clay.btn} ${clay.btnGreen}`}>
-              <Share2 className="size-5" aria-hidden />
+            <button type="button" onClick={share} className={`${clay.btn} ${clay.btnGreen} ${clay.btnSm}`}>
+              <Share2 className="size-4" aria-hidden />
               Partager
             </button>
           ) : null}
-          <button type="button" onClick={copy} className={clay.btn}>
-            <ClipboardCopy className="size-5" aria-hidden />
+          <button type="button" onClick={copy} className={`${clay.btn} ${clay.btnSm}`}>
+            <ClipboardCopy className="size-4" aria-hidden />
             Copier
           </button>
         </div>
@@ -231,7 +231,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
       ) : null}
       {error ? <p className="rounded-2xl bg-red-100 px-4 py-2 font-semibold text-red-800">{error}</p> : null}
 
-      <section className={`${clay.day} grid gap-3`} aria-label="Ajouter">
+      <section className={`${clay.day} ${clay.dayTight} grid gap-2`} aria-label="Ajouter">
         <form
           className="flex gap-2"
           onSubmit={(event) => {
@@ -251,20 +251,20 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
             maxLength={80}
             autoComplete="off"
             enterKeyHint="done"
-            className={clay.field}
+            className={`${clay.field} h-10 text-sm`}
           />
           <datalist id="shopping-names">
             {ingredientNames.map((item) => (
               <option key={item.id} value={item.name} />
             ))}
           </datalist>
-          <button type="submit" disabled={!name.trim()} className={clay.btn} aria-label="Ajouter">
-            <Plus className="size-5" aria-hidden />
+          <button type="submit" disabled={!name.trim()} className={`${clay.btn} ${clay.btnSm}`} aria-label="Ajouter">
+            <Plus className="size-4" aria-hidden />
           </button>
         </form>
         {staples.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Basiques">
-            <span className="text-sm font-bold opacity-70">Basiques :</span>
+            <span className="text-xs font-bold uppercase opacity-70">Basiques</span>
             {staples.map((staple) => {
               const line = inList.get(staple.id);
               const added = line !== undefined && !line.removed;
@@ -275,7 +275,7 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
                   aria-pressed={added}
                   disabled={added && line?.source !== "STAPLE"}
                   onClick={() => run(null, () => toggleStaple(week, staple.id, !added))}
-                  className={clay.chip}
+                  className={`${clay.chip} ${clay.chipSm}`}
                 >
                   {staple.name}
                 </button>
@@ -290,13 +290,13 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           Rien à acheter : remplis la semaine, ajoute les ingrédients des plats ou tape un basique.
         </p>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {AISLES.map((aisle) => {
             const inAisle = active.filter((line) => line.aisle === aisle.id);
             if (inAisle.length === 0) return null;
             return (
-              <section key={aisle.id} className={clay.day} aria-labelledby={`aisle-${aisle.id}`}>
-                <h2 id={`aisle-${aisle.id}`} className={`${clay.dayTitle} mb-1 px-1`}>
+              <section key={aisle.id} className={`${clay.day} ${clay.dayTight}`} aria-labelledby={`aisle-${aisle.id}`}>
+                <h2 id={`aisle-${aisle.id}`} className="mb-0.5 px-1 text-sm font-extrabold tracking-wide uppercase opacity-80">
                   {aisle.label} <span className="text-sm font-semibold opacity-60">· {inAisle.filter((line) => !line.checked).length}</span>
                 </h2>
                 <ul>{inAisle.map(row)}</ul>

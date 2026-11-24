@@ -256,3 +256,27 @@
   box-shadow: 0 10px 24px oklch(0.4 0.08 45 / 0.35);
   transform: rotate(-3deg);
 }
+
+/* ---------- Compact variants (shopping list) ---------- */
+.clay-day-tight {
+  padding: 0.55rem 0.7rem;
+  border-radius: 1.4rem;
+}
+
+.clay-icon-btn-sm {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+
+.clay-btn-sm {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  box-shadow:
+    0 3px 0 oklch(0.62 0.14 var(--hue)),
+    inset 2px 2px 4px oklch(1 0 0 / 0.55);
+}
+
+.clay-chip-sm {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.85rem;
+}

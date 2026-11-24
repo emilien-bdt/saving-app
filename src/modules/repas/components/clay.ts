@@ -25,4 +25,8 @@ export const clay = {
   sheet: "clay-sheet",
   slotLabel: "clay-slot-label",
   today: "clay-today",
+  dayTight: "clay-day-tight",
+  iconBtnSm: "clay-icon-btn-sm",
+  btnSm: "clay-btn-sm",
+  chipSm: "clay-chip-sm",
 } as const;
