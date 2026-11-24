@@ -1,5 +1,19 @@
 # Déploiement — save.emilienbourdet.fr
 
+> **Serveur actuel (24/11/2026)** : Save est déclaré dans le `docker-compose.yml` **principal** de
+> `/Serveur OVH - minecraft` (services `save-db`, `save-migrate`, `save-app`, volume `save-prod-db`,
+> `env_file: ./save/.env`), à côté de nginx, certbot, portfolio et famille-site. Le dossier
+> `/Serveur OVH - minecraft/save` est un clone git du dépôt. Ne pas lancer `docker compose` depuis
+> `save/` : le `docker-compose.yml` du dépôt est celui de **développement** (Postgres publié sur 5432).
+>
+> Mise à jour :
+> ```bash
+> cd "/Serveur OVH - minecraft/save" && sudo git pull
+> cd .. && sudo docker compose up -d --build save-migrate save-app
+> sudo docker compose logs save-migrate
+> ```
+> Le reste de ce fichier décrit l'installation autonome (`docker-compose.prod.yml`), non utilisée sur ce serveur.
+
 Serveur : Docker, nginx + certbot dans leurs propres conteneurs.
 Save = 3 services (`docker-compose.prod.yml`) : `save-db` (Postgres 17), `save-migrate` (applique les migrations puis s'arrête), `save-app` (Next.js, joint au réseau de nginx, jamais publié sur un port de l'hôte).
 

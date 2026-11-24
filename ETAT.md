@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 17).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 17 + mise en ligne).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -8,9 +8,9 @@
 | | |
 |---|---|
 | Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille, génération, plats et accompagnements, ingrédients, liste de courses) |
-| Environnement | Local (`npm run dev`, Postgres Docker) ; déploiement prêt pour https://save.emilienbourdet.fr (serveur perso, Docker + nginx) — **mise en ligne à faire** (`deploy/README.md`) |
-| Git | branche `main`, commits non poussés (`git push` à faire) |
-| Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
+| Environnement | **En ligne** : https://save.emilienbourdet.fr (VPS OVH, compose principal de `/Serveur OVH - minecraft`, dossier `save` = clone git) ; mise à jour = `git pull` + `docker compose up -d --build save-migrate save-app` (voir `deploy/README.md`). Local (`npm run dev`) = tests uniquement. |
+| Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
+| Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
 | Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
@@ -88,13 +88,12 @@
 
 ## Ce qui reste à faire (dans l'ordre)
 
-0. **Valider à l'écran** l'Accueil, To do et Repas (`npm run db:migrate`, puis `npm run import:repas`).
+0. **Valider à l'écran** l'Accueil et To do (Repas validé le 24/11/2026).
 0 bis. **Repas** : remplir les quantités pour 2 dans Plats (les suggestions Excel n'en ont souvent pas) et les conditionnements des ingrédients ; garder les fusions de plats lors d'un réimport.
 1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
 4. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
-5. **Mise en ligne** sur le serveur (fichiers prêts, voir `deploy/README.md`) : DNS, `.env`, restauration de la base locale, certificat.
 6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), To do : tâches récurrentes / sous-tâches, Repas : option Gemini (gratuit).
 
 ## Limites connues
@@ -113,7 +112,7 @@
 npm run db:up
 npm run dev
 ```
-Puis http://localhost:3000 — Accueil (ou http://192.168.1.28:3000 depuis l'iPhone sur le même Wi-Fi).
+Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbourdet.fr (PWA iPhone).
 
 ## Historique des étapes
 
@@ -138,3 +137,4 @@ Puis http://localhost:3000 — Accueil (ou http://192.168.1.28:3000 depuis l'iPh
 | 16 | `777df49` | Plats et ingrédients : catalogue (rayon, unité, conditionnement), fusion des doublons, suggestions Excel |
 | 16 bis | `de930f5` | Repas = plat + accompagnements (découpe à l'import, génération avec accompagnements habituels) |
 | 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
+| — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
