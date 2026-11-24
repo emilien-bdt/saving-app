@@ -9,6 +9,7 @@ import type { DishItem, IngredientOption } from "../view-models";
 import { look } from "./look";
 import { DishEditor } from "./dish-editor";
 import { dishHue } from "./labels";
+import { DishPhoto } from "./dish-photo";
 
 type Filter = "all" | "todo" | "duplicates" | "archived";
 
@@ -91,6 +92,7 @@ export function DishesBoard({ dishes, ingredients }: { dishes: readonly DishItem
             return (
               <li key={dish.id} style={{ "--hue": dishHue(dish.id) } as CSSProperties} className={`${look.meal} ${look.mealTight} bg-card! ${dish.archived ? look.proposed : ""} flex h-full min-h-28 flex-col gap-1.5`}>
                 <button type="button" onClick={() => setEditingId(dish.id)} className="flex flex-1 flex-col gap-0.5 text-left active:opacity-60">
+                  {dish.photoUrl ? <DishPhoto src={dish.photoUrl} className="mb-1.5 aspect-[16/9] w-full rounded-lg" /> : null}
                   <span className="line-clamp-2 pr-4 text-[17px] leading-snug font-semibold">{dish.name}</span>
                   <span className="text-xs font-medium text-muted-foreground">
                     {dish.cooked > 0 ? `Cuisiné ${dish.cooked} fois` : "Jamais cuisiné"}

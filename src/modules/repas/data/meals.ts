@@ -3,6 +3,7 @@ import type { HistoryMeal, Proposal } from "../domain/generator";
 import type { MealCell, MealKind, MealStatus, SlotChange } from "../domain/grid";
 import { type MealSlot, type SlotRef, addDays, toIsoDate } from "../domain/week";
 import type { MealView } from "../view-models";
+import { dishPhotoUrl } from "./photos";
 
 const mealSelect = {
   date: true,
@@ -12,7 +13,7 @@ const mealSelect = {
   label: true,
   note: true,
   status: true,
-  dish: { select: { name: true } },
+  dish: { select: { name: true, photo: { select: { updatedAt: true } } } },
   sides: { orderBy: { sortOrder: "asc" }, select: { ingredient: { select: { id: true, name: true } } } },
 } as const;
 
@@ -24,7 +25,7 @@ export type MealRow = {
   label: string | null;
   note: string | null;
   status: MealStatus;
-  dish: { name: string } | null;
+  dish: { name: string; photo: { updatedAt: Date } | null } | null;
   sides: { ingredient: { id: string; name: string } }[];
 };
 
@@ -40,6 +41,7 @@ export function toView(row: MealRow): MealView {
     kind: row.kind,
     dishId: row.dishId,
     dishName: row.dish?.name ?? null,
+    photoUrl: row.dishId && row.dish?.photo ? dishPhotoUrl(row.dishId, row.dish.photo.updatedAt) : null,
     sides: row.sides.map((side) => side.ingredient),
     label: row.label,
     note: row.note,

@@ -7,6 +7,7 @@ import { getShoppingData } from "../data/shopping";
 import { buildShoppingList } from "../domain/shopping";
 import { addDays, mondayOf, parseIsoDate, toIsoDate } from "../domain/week";
 import type { MealView } from "../view-models";
+import { DishPhoto } from "./dish-photo";
 import { mealTitle } from "./labels";
 
 function MealLine({ when, meal }: { when: string; meal: MealView | null }) {
@@ -14,6 +15,7 @@ function MealLine({ when, meal }: { when: string; meal: MealView | null }) {
   return (
     <li className="flex items-center gap-3 py-2">
       <span className="w-24 shrink-0 text-[13px] text-muted-foreground">{when}</span>
+      {meal?.photoUrl ? <DishPhoto src={meal.photoUrl} className="size-9 shrink-0 rounded-lg" /> : null}
       {meal ? (
         <span className={`min-w-0 flex-1 truncate text-[17px] ${meal.kind === "OUT" ? "text-muted-foreground" : "font-semibold"}`}>
           {meal.kind === "LEFTOVER" ? "Reste · " : ""}

@@ -3,6 +3,7 @@ import { cleanDishName, dishKey } from "../domain/dish-key";
 import { type Aisle, findLikelyDuplicates, guessAisle, ingredientKey, type Unit } from "../domain/ingredients";
 import { toIsoDate } from "../domain/week";
 import type { DishItem, DishOption, IngredientOption, SideOption } from "../view-models";
+import { dishPhotoUrl } from "./photos";
 
 /** Existing dish with the same normalised name, or a new one. */
 export async function findOrCreateDish(name: string): Promise<string> {
@@ -35,6 +36,7 @@ export async function getDishItems(): Promise<DishItem[]> {
         id: true,
         name: true,
         archived: true,
+        photo: { select: { updatedAt: true } },
         ingredients: {
           orderBy: { sortOrder: "asc" },
           select: { amount: true, suggested: true, ingredient: { select: { id: true, name: true, unit: true, aisle: true } } },
@@ -56,6 +58,7 @@ export async function getDishItems(): Promise<DishItem[]> {
       cooked: cookedById.get(dish.id) ?? 0,
       meals: use?._count._all ?? 0,
       lastIso: use?._max.date ? toIsoDate(use._max.date) : null,
+      photoUrl: dish.photo ? dishPhotoUrl(dish.id, dish.photo.updatedAt) : null,
       ingredients: dish.ingredients.map((row) => ({
         ingredientId: row.ingredient.id,
         name: row.ingredient.name,

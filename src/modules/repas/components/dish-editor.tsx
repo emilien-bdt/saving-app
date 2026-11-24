@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { convertDishToSide, deleteDish, type DishInput, mergeDish, saveDish } from "../actions/dishes";
 import { type Aisle, AISLES, guessAisle, ingredientKey, type Unit, UNITS } from "../domain/ingredients";
 import type { DishItem, IngredientOption } from "../view-models";
+import { DishPhotoPicker } from "./dish-photo-picker";
 import { look } from "./look";
 import { Sheet } from "@/shared/ui/sheet";
 
@@ -81,11 +82,13 @@ export function DishEditor({ dish, dishes, ingredients, onClose }: Props) {
         }}
       >
         <div className="grid gap-1">
-          <label htmlFor="dish-name" className="text-sm font-semibold text-muted-foreground">
+          <label htmlFor="dish-name" className="px-1 text-[13px] font-medium text-muted-foreground">
             Nom
           </label>
           <input id="dish-name" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} className={look.field} />
         </div>
+
+        <DishPhotoPicker dishId={dish.id} dishName={dish.name} photoUrl={dish.photoUrl} />
 
         <section className="grid gap-2" aria-labelledby="dish-ingredients">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

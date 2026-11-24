@@ -9,6 +9,8 @@ export type MealView = {
   kind: MealKind;
   dishId: string | null;
   dishName: string | null;
+  /** Photo of the dish (null = none). */
+  photoUrl: string | null;
   /** Side items (chips, salade…). */
   sides: SideOption[];
   label: string | null;
@@ -39,6 +41,7 @@ export type DishItem = {
   /** Every meal using it (cooked + leftovers). */
   meals: number;
   lastIso: string | null;
+  photoUrl: string | null;
   ingredients: DishIngredientView[];
   /** Probably the same dish under another name (domain/ingredients.ts). */
   duplicateOf: { id: string; name: string } | null;

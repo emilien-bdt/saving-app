@@ -20,6 +20,7 @@ import { clearMeal, generateWeek, moveMeal, setMealValidated, setWeekValidated }
 import type { MealSlot } from "../domain/week";
 import type { DishOption, MealView, SideOption } from "../view-models";
 import { ios } from "@/shared/ui/ios";
+import { DishPhoto } from "./dish-photo";
 import { look } from "./look";
 import { dishHue, longDayLabel, mealTitle, SLOT_LABELS, sidesLine } from "./labels";
 import { MealEditor } from "./meal-editor";
@@ -219,6 +220,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
         </span>
         <div style={hueStyle(meal)} className={`${classes} flex flex-1 flex-col`}>
           <button type="button" onClick={() => setEditing({ key, meal })} className="mb-2 flex-1 text-left active:opacity-60">
+            {meal.photoUrl ? <DishPhoto src={meal.photoUrl} className="mb-2 aspect-[4/3] w-full rounded-lg" /> : null}
             {mealText(meal, false)}
           </button>
           <div className="flex items-center gap-1">
@@ -286,8 +288,13 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
             return (
               <div
                 style={hueStyle(meal)}
-                className={`relative rounded-2xl bg-card p-4 ${meal.kind === "OUT" ? "text-muted-foreground" : ""} ${isOver ? look.over : ""} ${drag?.from === key ? look.dragging : ""}`}
+                className={`relative overflow-hidden rounded-2xl bg-card p-4 ${meal.kind === "OUT" ? "text-muted-foreground" : ""} ${isOver ? look.over : ""} ${drag?.from === key ? look.dragging : ""}`}
               >
+                {meal.photoUrl ? (
+                  <button type="button" onClick={() => setEditing({ key, meal })} className="-mx-4 -mt-4 mb-3 block w-[calc(100%+2rem)]" aria-label={`Modifier « ${mealTitle(meal)} »`}>
+                    <DishPhoto src={meal.photoUrl} className="aspect-[16/9] w-full" />
+                  </button>
+                ) : null}
                 <div className="flex items-start gap-2">
                   <button type="button" onClick={() => setEditing({ key, meal })} className="min-w-0 flex-1 text-left active:opacity-60">
                     {mealText(meal, true)}

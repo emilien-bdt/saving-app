@@ -37,8 +37,21 @@ model RepasDish {
   updatedAt DateTime    @updatedAt
   meals       RepasMeal[]
   ingredients RepasDishIngredient[]
+  photo       RepasDishPhoto?
 
   @@map("repas_dish")
+}
+
+/// Photo of a dish, resized in the browser (≤ 1200 px JPEG) before upload.
+/// CHECK constraints in the migration: allowed types, size ≤ 3 Mo.
+model RepasDishPhoto {
+  dishId    String    @id
+  dish      RepasDish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  mimeType  String
+  data      Bytes
+  updatedAt DateTime  @updatedAt
+
+  @@map("repas_dish_photo")
 }
 
 model RepasMeal {

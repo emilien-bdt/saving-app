@@ -7,6 +7,7 @@ import type { MealKind } from "../domain/grid";
 import type { MealSlot } from "../domain/week";
 import { ingredientKey } from "../domain/ingredients";
 import type { DishOption, MealView, SideOption } from "../view-models";
+import { DishPhotoPicker } from "./dish-photo-picker";
 import { look } from "./look";
 import { longDayLabel, SLOT_LABELS } from "./labels";
 import { Sheet } from "@/shared/ui/sheet";
@@ -233,8 +234,12 @@ export function MealEditor({ dateIso, slot, pickSlot = false, meal, dishes, side
           </div>
         )}
 
+        {meal?.dishId && meal.dishName && values.kind !== "OUT" && values.dishName.trim() === meal.dishName ? (
+          <DishPhotoPicker key={meal.dishId} dishId={meal.dishId} dishName={meal.dishName} photoUrl={meal.photoUrl} />
+        ) : null}
+
         <div className="grid gap-1">
-          <label htmlFor="meal-note" className="text-sm text-muted-foreground">
+          <label htmlFor="meal-note" className="px-1 text-[13px] font-medium text-muted-foreground">
             Note
           </label>
           <input
