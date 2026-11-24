@@ -155,4 +155,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 18 | `77486af` | Style iOS sur tout le site : onglets des apps, grand titre, contrôle segmenté, `Sheet` (glisser pour fermer), tirer pour rafraîchir, Accueil en cartes (Repas, To do, Finances, Courses), Repas jour par jour sur iPhone, fin du style pâte à modeler |
 | — | `f8e3fbc` | Design iOS : corrections après contrôle à l'écran (débordement Piloter, boutons Repas) |
 | 19 | `eef8e9e` | Photo des plats (table `repas_dish_photo`, redimensionnement navigateur, route privée versionnée) |
-| 20 | (ce commit) | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
+| 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
