@@ -1,6 +1,7 @@
 import {
   findColumn,
   findColumns,
+  findLastColumn,
   type ParsedStatement,
   parseDecimalCents,
   parseStatementDate,
@@ -52,6 +53,9 @@ export function readBoursobank(table: string[][]): ParsedStatement | null {
   const parentIndex = findColumn(header, ["categoryparent", "categorie parente", "categorie parent"]);
   const supplierIndex = findColumn(header, ["supplierfound", "libelle suggere"]);
   const accountIndex = findColumn(header, ["accountlabel", "libelle compte"]);
+  // The balance: « accountbalance », or the second « Solde ».
+  const lastSolde = findLastColumn(header, ["solde"]);
+  const balanceIndex = findColumn(header, ["accountbalance"]) >= 0 ? findColumn(header, ["accountbalance"]) : lastSolde !== amountIndex ? lastSolde : -1;
 
   const rows: StatementRow[] = [];
   const errors: string[] = [];
@@ -78,6 +82,7 @@ export function readBoursobank(table: string[][]): ParsedStatement | null {
       merchant: merchantOf(at(supplierIndex)),
       bankCategory: [...new Set([parent, category].filter(Boolean))].join(" › ") || null,
       amountCents: amount,
+      balanceCents: balanceIndex >= 0 && at(balanceIndex) !== "" ? parseDecimalCents(at(balanceIndex)) : null,
       currency: "EUR",
       state: "COMPLETED",
       stateLabel: "Passée",

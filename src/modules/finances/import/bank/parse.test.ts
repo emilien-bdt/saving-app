@@ -58,8 +58,10 @@ describe("parseBankStatement", () => {
       startedAt: "2026-11-05 20:22:09",
       dateIso: "2026-11-05",
       amountCents: -2590,
+      balanceCents: 39716,
       state: "COMPLETED",
     });
+    expect(rows.find((row) => row.description === "Amazon")?.balanceCents).toBeNull();
     expect(rows.find((row) => row.description === "Boutique Exemple")?.state).toBe("CANCELLED");
     expect(rows.find((row) => row.description === "Amazon")?.state).toBe("PENDING");
     expect(rows.find((row) => row.description.startsWith("Paiement envoyé"))?.kind).toBe("TOPUP");
@@ -82,6 +84,7 @@ describe("parseBankStatement", () => {
       ["TRANSFER", "2026-11-23", -50000, SAVINGS_STATEMENT_PRODUCT],
       ["INTEREST", "2026-11-24", 6, SAVINGS_STATEMENT_PRODUCT],
     ]);
+    expect(rows[1]?.balanceCents).toBe(175791);
   });
 
   it("reads a BoursoBank export (« ; », first « Solde » = amount, bank category, suggested label)", () => {
@@ -101,6 +104,7 @@ describe("parseBankStatement", () => {
       state: "COMPLETED",
     });
     expect(rows[0]?.bankCategory).toBe("Vie quotidienne");
+    expect(rows[0]?.balanceCents).toBe(194540);
     expect(rows[3]).toMatchObject({ kind: "TRANSFER", merchant: null, amountCents: 15000 });
     expect(rows[5]?.merchant).toBeNull();
     expect(rows[7]?.amountCents).toBe(-102990);

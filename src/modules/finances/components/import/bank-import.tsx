@@ -4,6 +4,7 @@ import { FileUp, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useRef, useState, useTransition } from "react";
+import { formatCents } from "@/shared/lib/money";
 import { Button } from "@/shared/ui/button";
 import { ios } from "@/shared/ui/ios";
 import { applyBankImport, type BankPreview, previewBankImport } from "../../actions/bank-import";
@@ -117,9 +118,15 @@ export function BankImport({ accounts, categories }: Props) {
   const accountName = (id: string | null) => accounts.find((account) => account.id === id)?.displayName ?? "?";
   const activeAccounts = accounts.filter((account) => !account.archived);
 
-  const loadPreview = (loaded: LoadedFile, productAccounts?: Record<string, string | null>, fromDate?: string | null) =>
+  type PreviewOptions = Pick<BankPreview, "productAccounts" | "fromDate" | "rebaseAccountIds">;
+  const optionsOf = (current: BankPreview): PreviewOptions => ({
+    productAccounts: current.productAccounts,
+    fromDate: current.fromDate,
+    rebaseAccountIds: current.rebaseAccountIds,
+  });
+  const loadPreview = (loaded: LoadedFile, options?: Partial<PreviewOptions>) =>
     startTransition(async () => {
-      const response = await previewBankImport({ csv: loaded.text, fileName: loaded.name, productAccounts, fromDate });
+      const response = await previewBankImport({ csv: loaded.text, fileName: loaded.name, ...options });
       if (!response.ok) {
         setError(response.error);
         setPreview(null);
@@ -175,6 +182,7 @@ export function BankImport({ accounts, categories }: Props) {
         fileName: file.name,
         productAccounts: preview.productAccounts,
         fromDate: preview.fromDate,
+        rebaseAccountIds: preview.rebaseAccountIds,
         skippedRefs: [...skipped],
         categories: Object.fromEntries(
           creates.filter((operation) => chosenCategories[operation.ref]).map((operation) => [operation.ref, categoryOf(operation)]),
@@ -249,7 +257,8 @@ export function BankImport({ accounts, categories }: Props) {
           Import terminé : {plural(result.created, "opération ajoutée", "opérations ajoutées")}
           {result.linked > 0 ? `, ${plural(result.linked, "saisie reconnue", "saisies reconnues")}` : ""}
           {result.cleared > 0 ? `, ${plural(result.cleared, "pointée", "pointées")}` : ""}
-          {result.removed > 0 ? `, ${plural(result.removed, "retirée", "retirées")}` : ""}.{" "}
+          {result.removed > 0 ? `, ${plural(result.removed, "retirée", "retirées")}` : ""}
+          {result.rebased > 0 ? `, historique repris pour ${plural(result.rebased, "compte", "comptes")}` : ""}.{" "}
           <Link href="/finances/transactions" className="font-semibold underline underline-offset-2">
             Voir le Journal
           </Link>
@@ -326,7 +335,10 @@ export function BankImport({ accounts, categories }: Props) {
                     aria-label={`Compte pour ${product.product}`}
                     disabled={pending}
                     onChange={(event) =>
-                      loadPreview(file, { ...preview.productAccounts, [product.product]: event.target.value || null }, preview.fromDate)
+                      loadPreview(file, {
+                        ...optionsOf(preview),
+                        productAccounts: { ...preview.productAccounts, [product.product]: event.target.value || null },
+                      })
                     }
                     className="h-9 max-w-[55%] rounded-lg bg-muted px-2 text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                   >
@@ -351,12 +363,50 @@ export function BankImport({ accounts, categories }: Props) {
                   min={preview.period?.from}
                   max={preview.period?.to}
                   disabled={pending}
-                  onChange={(event) => loadPreview(file, preview.productAccounts, event.target.value || null)}
+                  onChange={(event) => loadPreview(file, { ...optionsOf(preview), fromDate: event.target.value || null })}
                   className="h-9 rounded-lg bg-muted px-2 text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                 />
               </li>
             </ul>
           </section>
+
+          {preview.beforeOpening.map((entry) => {
+            const rebasing = preview.rebaseAccountIds.includes(entry.accountId);
+            const rebase = preview.rebases.find((item) => item.accountId === entry.accountId);
+            return (
+              <section key={entry.accountId} className={`${ios.cardPad} space-y-2`}>
+                <p className="text-[15px]">
+                  {plural(entry.rowCount, "opération est antérieure", "opérations sont antérieures")} à l&apos;ouverture de «{" "}
+                  {accountName(entry.accountId)} » dans Save ({formatDateFr(entry.openedIso)}).
+                </p>
+                <p className={ios.hint}>
+                  {rebasing && rebase
+                    ? `Le compte sera ouvert au ${formatDateFr(rebase.openedIso)}${
+                        rebase.balance
+                          ? ` et son solde calé sur celui de la banque : ${formatCents(rebase.balance.balanceCents)} au ${formatDateFr(rebase.balance.dateIso)}.`
+                          : " ; le relevé ne donne pas le solde, le solde initial ne change pas."
+                      }`
+                    : "Reprendre l'historique : le compte est ouvert à la date de la plus ancienne opération importée, et son solde calé sur celui donné par la banque."}
+                </p>
+                <Button
+                  type="button"
+                  variant={rebasing ? "outline" : "secondary"}
+                  size="sm"
+                  disabled={pending}
+                  onClick={() =>
+                    loadPreview(file, {
+                      ...optionsOf(preview),
+                      rebaseAccountIds: rebasing
+                        ? preview.rebaseAccountIds.filter((accountId) => accountId !== entry.accountId)
+                        : [...preview.rebaseAccountIds, entry.accountId],
+                    })
+                  }
+                >
+                  {rebasing ? "Ne pas reprendre l'historique" : "Reprendre l'historique"}
+                </Button>
+              </section>
+            );
+          })}
 
           {preview.errors.length > 0 ? (
             <p className={ios.alertError}>

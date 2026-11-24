@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 25/11/2026, étape 22 import des relevés BoursoBank).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 25/11/2026, étape 22 bis reprise de l'historique à l'import).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -12,7 +12,7 @@
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
 | Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : design (18), photos (19), comptes / foyers (20), import Revolut (21) et BoursoBank (22) faits ; migration 22 à appliquer sur le serveur |
-| Tests | 288 tests de logique (Vitest), lint et typecheck au vert |
+| Tests | 293 tests de logique (Vitest), lint et typecheck au vert |
 
 ## Ce qui fonctionne
 
@@ -63,7 +63,8 @@
 - Accès : Journal › « Importer », ou Paramètres › « Importer un relevé bancaire ».
 - **Revolut** : CSV exporté de l'app (Comptes › ⋯ › Relevé › Excel) : export des opérations (tous les produits : « Valeur actuelle », « Dépôt »…) ou relevé d'un compte d'épargne ; en-têtes français ou anglais.
 - **BoursoBank** : CSV « Exporter les opérations » (séparateur « ; », tout l'historique) ; libellé = « Libellé Suggéré » quand Bourso a trouvé le commerçant ; la catégorie Bourso aide à choisir la nôtre ; compte proposé : un compte dont le nom contient « Bourso ».
-- **À partir du** : date choisie dans l'aperçu ; les lignes antérieures à l'ouverture du compte dans Save sont ignorées d'office (elles fausseraient son solde).
+- **À partir du** : date choisie dans l'aperçu ; les lignes antérieures à l'ouverture du compte dans Save sont ignorées par défaut.
+- **Reprendre l'historique** (proposé quand des lignes précèdent l'ouverture du compte) : les importe aussi ; le compte est ouvert à la date de la plus ancienne opération importée et son **solde initial est recalculé** pour que son solde dans Save égale celui donné par la banque à la dernière date du relevé (colonne Solde de Revolut / BoursoBank).
 - **Aperçu avant tout enregistrement** : compte choisi pour chaque produit Revolut (proposé : Compte Courant, épargne nommée dans les libellés), puis :
   - **Nouvelles** (cochées par défaut) avec catégorie proposée : habituelle d'après l'historique des libellés, sinon « devinée » (commerçants courants) ou « à vérifier » (Autres dépenses / Apports), modifiable ;
   - **Déjà saisies** : même compte, même type, même montant, à 3 jours près (même mois pour une saisie « sans jour ») → gardent libellé et catégorie, prennent la date de la banque et sont pointées (les opérations prévues par une récurrence le seront aussi) ;
@@ -133,6 +134,7 @@ D. **Finitions par module** : Piloter repensé pour l'iPhone (graphiques), geste
 - Les catégories ne se modifient pas encore depuis l'app (seulement via `npm run db:studio`).
 - Le solde initial d'un compte ne se modifie pas (choix) : on corrige par une opération ou un virement.
 - Intérêts : base 365 jours (années bissextiles comprises), avant impôts ; un écart de quelques centimes avec Revolut reste possible (Revolut verse des intérêts nets de frais : les lignes « Intérêts » des relevés ne sont pas importées).
+- Reprise d'historique : sur un compte d'épargne à intérêts calculés par l'app, les intérêts réels versés avant la dernière date du relevé sont absorbés dans le solde initial (écart possible ensuite). Sur l'export BoursoBank réel, le solde initial obtenu au 25/06/2021 est de −59,71 € (opérations du premier jour absentes de l'export) ; le solde au 30/10/2026 est juste.
 - Import bancaire : un virement entre deux banques (Bourso → Revolut) importé des deux côtés donne une dépense et un revenu, pas un virement (à décocher d'un côté ou à corriger) ; le libellé est nettoyé (« Paiement envoyé par OPEN SAS » → « Open SAS ») mais pas renommé ; une catégorie corrigée dans le Journal sert de modèle aux imports suivants.
 - Environnement de Claude : pas d'installation de paquets, ni de Vitest natif (tests lancés avec Node), ni de `prisma generate` / `next typegen` ; l'app réelle se teste sur le Mac.
 - Le projet est dans `Documents` (synchronisé iCloud) : iCloud peut retirer du disque des fichiers de `.git` (« Bus error » / « Resource deadlock avoided » côté Claude). Les retélécharger avant un commit ; à terme, sortir le projet du dossier synchronisé.
@@ -176,3 +178,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
 | 21 | `f68309f` | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |
 | 22 | `a4dbad2` | Import des relevés BoursoBank (CSV « ; »), module `import/bank` commun, date « à partir du », lignes avant l'ouverture du compte ignorées |
+| 22 bis | _à venir_ | Import : « Reprendre l'historique » (ouverture du compte avancée, solde initial calé sur le solde de la banque) |

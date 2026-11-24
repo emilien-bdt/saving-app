@@ -20,6 +20,7 @@ export type BankPreview = BankImportPlan & {
   errors: string[];
   productAccounts: Record<string, string | null>;
   fromDate: string | null;
+  rebaseAccountIds: string[];
 };
 
 type Failure = { ok: false; error: string };
@@ -34,6 +35,8 @@ const fileSchema = z.object({
   productAccounts: z.record(z.string().max(100), id.nullable()).optional(),
   /** Rows before this date are ignored. */
   fromDate: z.iso.date().nullish(),
+  /** Accounts whose history before their opening in Save is imported too. */
+  rebaseAccountIds: z.array(id).max(50).optional(),
 });
 
 const applySchema = fileSchema.extend({
@@ -51,14 +54,15 @@ async function buildPreview(input: z.output<typeof fileSchema>): Promise<BankPre
   const context = await loadBankPlanContext(rows, source, {}, fromDate);
   const active = context.accounts.filter((account) => !account.archived);
   const activeIds = new Set(active.map((account) => account.id));
+  const rebaseAccountIds = (input.rebaseAccountIds ?? []).filter((accountId) => activeIds.has(accountId));
   const proposed = defaultProductAccounts(rows, active, source);
   const productAccounts = { ...proposed };
   for (const product of Object.keys(proposed)) {
     const chosen = input.productAccounts?.[product];
     if (chosen !== undefined) productAccounts[product] = chosen !== null && activeIds.has(chosen) ? chosen : null;
   }
-  const plan = planBankImport(rows, { ...context, productAccounts });
-  return { ...plan, format, errors, productAccounts, fromDate };
+  const plan = planBankImport(rows, { ...context, productAccounts, rebaseAccountIds: new Set(rebaseAccountIds) });
+  return { ...plan, format, errors, productAccounts, fromDate, rebaseAccountIds };
 }
 
 /** Reads the statement and says what the import would do (nothing is written). */

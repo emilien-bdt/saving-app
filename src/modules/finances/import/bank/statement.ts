@@ -25,6 +25,8 @@ export type StatementRow = {
   bankCategory: string | null;
   /** Signed, fees included, in cents. */
   amountCents: number;
+  /** Balance of the bank account after the row (end of day for BoursoBank), when the file gives it. */
+  balanceCents: number | null;
   currency: string;
   state: RowState;
   stateLabel: string;
@@ -61,6 +63,11 @@ export function findColumns<T extends Record<string, readonly string[]>>(
 /** Index of an optional column, -1 when absent. */
 export function findColumn(header: readonly string[], aliases: readonly string[]): number {
   return header.map(plainKey).findIndex((value) => aliases.includes(value));
+}
+
+/** Index of the last column with one of these names (BoursoBank has two « Solde »), -1 when absent. */
+export function findLastColumn(header: readonly string[], aliases: readonly string[]): number {
+  return header.map(plainKey).findLastIndex((value) => aliases.includes(value));
 }
 
 /** « -25.90 », « 1 234,56 € », « 0,08€ », « −3,20 » → cents (null when not an amount). */

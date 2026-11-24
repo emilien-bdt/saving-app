@@ -14,6 +14,7 @@ export async function loadBankPlanContext(
   source: BankSource,
   productAccounts: Record<string, string | null>,
   fromDate: string | null,
+  rebaseAccountIds: ReadonlySet<string> = new Set(),
 ): Promise<PlanContext> {
   const { userId } = await requireSession();
   const [{ accounts, categories, suggestions }, openings] = await Promise.all([
@@ -50,6 +51,7 @@ export async function loadBankPlanContext(
     userId,
     source,
     fromDate,
+    rebaseAccountIds,
     accounts: accounts.map((account) => ({
       id: account.id,
       name: account.name,
@@ -76,7 +78,7 @@ export type BankImportDecisions = {
   keptIds: ReadonlySet<string>;
 };
 
-export type BankImportResult = { created: number; linked: number; cleared: number; removed: number };
+export type BankImportResult = { created: number; linked: number; cleared: number; removed: number; rebased: number };
 
 export class BankImportError extends Error {}
 
@@ -161,7 +163,45 @@ export async function applyBankPlan(
             })
           : { count: 0 };
 
-      return { created: creates.length, linked, cleared, removed };
+      // History taken back: the account opens on its first imported row, with the initial balance that makes
+      // its balance in Save equal to the bank's on the last date of the statement.
+      let rebased = 0;
+      for (const rebase of plan.rebases) {
+        const account = await tx.account.findFirst({
+          where: { id: rebase.accountId, userId },
+          select: { initialBalanceDate: true, initialBalanceCents: true },
+        });
+        if (!account) continue;
+        const openedOn = new Date(`${rebase.openedIso}T00:00:00Z`);
+        let initialBalanceCents = account.initialBalanceCents;
+        if (rebase.balance) {
+          const moves = await tx.transaction.findMany({
+            where: {
+              userId,
+              status: "CLEARED",
+              date: { lte: new Date(`${rebase.balance.dateIso}T00:00:00Z`) },
+              OR: [{ accountId: rebase.accountId }, { toAccountId: rebase.accountId }],
+            },
+            select: { type: true, amountCents: true, accountId: true },
+          });
+          const movesCents = moves.reduce((sum, move) => {
+            if (move.type === "INCOME") return sum + move.amountCents;
+            if (move.type === "EXPENSE") return sum - move.amountCents;
+            return move.accountId === rebase.accountId ? sum - move.amountCents : sum + move.amountCents;
+          }, 0);
+          initialBalanceCents = rebase.balance.balanceCents - movesCents;
+        }
+        await tx.account.update({
+          where: { id: rebase.accountId },
+          data: {
+            initialBalanceDate: openedOn < account.initialBalanceDate ? openedOn : account.initialBalanceDate,
+            initialBalanceCents,
+          },
+        });
+        rebased++;
+      }
+
+      return { created: creates.length, linked, cleared, removed, rebased };
     },
     { maxWait: 10_000, timeout: 60_000 },
   );

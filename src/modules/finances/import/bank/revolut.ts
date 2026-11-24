@@ -1,4 +1,5 @@
 import {
+  findColumn,
   findColumns,
   ISO_DATE_TIME,
   type ParsedStatement,
@@ -57,7 +58,10 @@ function stateOf(state: string): RowState {
   return "UNKNOWN";
 }
 
+const optionalCents = (value: string) => (value.trim() === "" ? null : parseDecimalCents(value));
+
 function parseTransactions(table: string[][], index: Record<keyof typeof HEADERS, number>): ParsedStatement {
+  const balanceIndex = findColumn(table[0] ?? [], ["solde", "balance"]);
   const rows: StatementRow[] = [];
   const errors: string[] = [];
   table.slice(1).forEach((cells, position) => {
@@ -82,6 +86,7 @@ function parseTransactions(table: string[][], index: Record<keyof typeof HEADERS
       merchant: null,
       bankCategory: null,
       amountCents: amount - fee,
+      balanceCents: balanceIndex >= 0 ? optionalCents(cells[balanceIndex] ?? "") : null,
       currency: cell("currency").toUpperCase() || "EUR",
       state: stateOf(cell("state")),
       stateLabel: cell("state"),
@@ -91,6 +96,7 @@ function parseTransactions(table: string[][], index: Record<keyof typeof HEADERS
 }
 
 function parseSavings(table: string[][], index: Record<keyof typeof SAVINGS_HEADERS, number>): ParsedStatement {
+  const balanceIndex = findColumn(table[0] ?? [], ["solde", "balance"]);
   const rows: StatementRow[] = [];
   const errors: string[] = [];
   table.slice(1).forEach((cells, position) => {
@@ -116,6 +122,7 @@ function parseSavings(table: string[][], index: Record<keyof typeof SAVINGS_HEAD
       merchant: null,
       bankCategory: null,
       amountCents: Math.abs(moneyIn) - Math.abs(moneyOut),
+      balanceCents: balanceIndex >= 0 ? optionalCents(cells[balanceIndex] ?? "") : null,
       currency: "EUR",
       state: "COMPLETED",
       stateLabel: "Terminé",

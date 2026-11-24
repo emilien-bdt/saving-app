@@ -194,6 +194,20 @@ describe("planBankImport (against existing data)", () => {
   });
 });
 
+describe("planBankImport (history before the opening in Save)", () => {
+  it("reports the rows before the opening and takes them back with the last balance of the bank", () => {
+    const opened = accounts.map((account) => (account.id === "cc" ? { ...account, openedIso: "2026-11-10" } : account));
+    const plan = planBankImport(transactions, { ...context(), accounts: opened });
+    expect(plan.beforeOpening).toEqual([{ accountId: "cc", openedIso: "2026-11-10", rowCount: 5, firstDateIso: "2026-11-05" }]);
+    expect(plan.skipped.filter((row) => row.reason === "Avant l'ouverture du compte dans Save (10/11/2026)")).toHaveLength(5);
+    const rebased = planBankImport(transactions, { ...context(), accounts: opened, rebaseAccountIds: new Set(["cc"]) });
+    expect(rebased.rebases).toEqual([
+      { accountId: "cc", openedIso: "2026-11-05", balance: { accountId: "cc", dateIso: "2026-11-24", balanceCents: 75567 } },
+    ]);
+    expect(rebased.operations).toHaveLength(9);
+  });
+});
+
 describe("planBankImport (BoursoBank)", () => {
   const rows = parseBankStatement(fixture("boursobank.csv")).rows;
   const withOpening = accounts.map((account) => (account.id === "bourso" ? { ...account, openedIso: "2024-01-01" } : account));
@@ -228,6 +242,18 @@ describe("planBankImport (BoursoBank)", () => {
     expect(bistrot.map((operation) => operation.categoryId)).toEqual(["sorties", "sorties"]);
     expect(bistrot[0]?.ref).not.toBe(bistrot[1]?.ref);
     expect(bistrot[0]?.ref).toMatch(/^boursobank:[0-9a-f]{32}$/);
+  });
+
+  it("takes the history back when asked (opening moved back, bank balance given)", () => {
+    expect(plan.beforeOpening).toEqual([{ accountId: "bourso", openedIso: "2024-01-01", rowCount: 1, firstDateIso: "2021-06-25" }]);
+    expect(plan.rebases).toEqual([]);
+    const rebased = planBankImport(rows, { ...boursoContext(), rebaseAccountIds: new Set(["bourso"]) });
+    expect(rebased.skipped).toEqual([]);
+    expect(rebased.operations).toHaveLength(9);
+    expect(rebased.beforeOpening).toHaveLength(1);
+    expect(rebased.rebases).toEqual([
+      { accountId: "bourso", openedIso: "2021-06-25", balance: { accountId: "bourso", dateIso: "2026-10-30", balanceCents: 194540 } },
+    ]);
   });
 
   it("recognises a BoursoBank import as already imported and an entry typed by hand", () => {

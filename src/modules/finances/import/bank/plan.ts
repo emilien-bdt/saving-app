@@ -48,6 +48,8 @@ export type PlanContext = {
   existing: readonly ExistingTransaction[];
   /** Rows before this date (« AAAA-MM-JJ ») are ignored. */
   fromDate?: string | null;
+  /** Accounts whose history is taken back: rows before their opening in Save are imported (opening moved back). */
+  rebaseAccountIds?: ReadonlySet<string>;
   suggestions: readonly LabelSuggestion[];
   categories: readonly ImportCategory[];
 };
@@ -91,6 +93,18 @@ export type SkippedRow = { line: number; dateIso: string; description: string; a
 
 export type ProductSummary = { product: string; rowCount: number; accountId: string | null };
 
+/** Rows ignored because they are older than the account's opening in Save. */
+export type BeforeOpening = { accountId: string; openedIso: string; rowCount: number; firstDateIso: string };
+
+/** Last balance given by the bank for an account. */
+export type BankBalance = { accountId: string; dateIso: string; balanceCents: number };
+
+/**
+ * Account whose history is taken back: opened on `openedIso` (first imported row), its initial balance
+ * set so that its balance in Save equals the bank's on `balance.dateIso` (computed when writing).
+ */
+export type PlannedRebase = { accountId: string; openedIso: string; balance: BankBalance | null };
+
 export type BankImportPlan = {
   source: BankSource;
   products: ProductSummary[];
@@ -99,6 +113,8 @@ export type BankImportPlan = {
   skipped: SkippedRow[];
   /** First and last date of the file. */
   period: { from: string; to: string } | null;
+  beforeOpening: BeforeOpening[];
+  rebases: PlannedRebase[];
 };
 
 const CURRENT_PRODUCTS = ["valeur actuelle", "current", "compte courant", "courant"];
@@ -184,9 +200,15 @@ export function planBankImport(rows: readonly StatementRow[], context: PlanConte
     accountId: context.productAccounts[product] ?? null,
   }));
 
+  const beforeOpening = new Map<string, BeforeOpening>();
   const openedBefore = (accountId: string, dateIso: string) => {
     const opened = accountsById.get(accountId)?.openedIso;
-    return Boolean(opened && dateIso < opened);
+    if (!opened || dateIso >= opened) return false;
+    const entry = beforeOpening.get(accountId) ?? { accountId, openedIso: opened, rowCount: 0, firstDateIso: dateIso };
+    entry.rowCount++;
+    if (dateIso < entry.firstDateIso) entry.firstDateIso = dateIso;
+    beforeOpening.set(accountId, entry);
+    return !context.rebaseAccountIds?.has(accountId);
   };
   const skip = (row: StatementRow, reason: string) =>
     skipped.push({ line: row.line, dateIso: row.dateIso, description: row.description, amountCents: row.amountCents, reason });
@@ -371,5 +393,39 @@ export function planBankImport(rows: readonly StatementRow[], context: PlanConte
   }
 
   operations.sort((a, b) => b.dateIso.localeCompare(a.dateIso) || (a.lines[0] ?? 0) - (b.lines[0] ?? 0));
-  return { source: context.source, products, operations, removals, skipped, period };
+  // Last balance given by the bank per account (Revolut: file in chronological order; BoursoBank: newest first).
+  const lastBalance = new Map<string, { row: StatementRow; order: number }>();
+  for (const candidate of candidates) {
+    const { row, accountId } = candidate;
+    if (row.balanceCents === null || row.state !== "COMPLETED") continue;
+    const order = context.source === "REVOLUT" ? row.line : -row.line;
+    const current = lastBalance.get(accountId);
+    if (!current || row.dateIso > current.row.dateIso || (row.dateIso === current.row.dateIso && order > current.order)) {
+      lastBalance.set(accountId, { row, order });
+    }
+  }
+  const rebases: PlannedRebase[] = [];
+  for (const accountId of context.rebaseAccountIds ?? []) {
+    const opened = accountsById.get(accountId)?.openedIso;
+    const dates = candidates.filter((candidate) => candidate.accountId === accountId).map((candidate) => candidate.row.dateIso).sort();
+    const first = dates[0];
+    if (!first || (opened && first >= opened)) continue;
+    const last = lastBalance.get(accountId);
+    rebases.push({
+      accountId,
+      openedIso: first,
+      balance: last ? { accountId, dateIso: last.row.dateIso, balanceCents: last.row.balanceCents ?? 0 } : null,
+    });
+  }
+
+  return {
+    source: context.source,
+    products,
+    operations,
+    removals,
+    skipped,
+    period,
+    beforeOpening: [...beforeOpening.values()],
+    rebases,
+  };
 }
