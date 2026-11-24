@@ -26,7 +26,7 @@ export function StatusToggle({ id, status }: { id: string; status: TransactionSt
       className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted"
     >
       {cleared ? (
-        <CircleCheck className="size-6 text-emerald-600" aria-hidden />
+        <CircleCheck className="size-6 text-positive" aria-hidden />
       ) : (
         <CircleDashed className="size-6 text-muted-foreground" aria-hidden />
       )}

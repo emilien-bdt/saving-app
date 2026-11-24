@@ -54,7 +54,7 @@ export function AccountsSettings({ accounts }: { accounts: AccountSettingsItem[]
             <span className="truncate text-sm text-muted-foreground">· {account.parentName}</span>
           ) : null}
           {account.archived ? <span className="text-sm text-muted-foreground">· {ACCOUNT_GROUP_LABELS[account.group].toLowerCase()}</span> : null}
-          {account.currentRateBp > 0 ? <span className="shrink-0 text-sm text-emerald-700">· {formatRateBp(account.currentRateBp)}</span> : null}
+          {account.currentRateBp > 0 ? <span className="shrink-0 text-sm text-positive">· {formatRateBp(account.currentRateBp)}</span> : null}
         </button>
         {siblings && siblings.length > 1 ? (
           <span className="flex">

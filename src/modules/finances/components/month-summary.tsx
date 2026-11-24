@@ -14,7 +14,7 @@ function Figure({ label, cleared, projected, tone }: { label: string; cleared: s
 
 /** Apports / Dépenses / Tendance of the displayed transactions (pointé, and prévisionnel when different). */
 export function MonthSummary({ summary }: { summary: Summary }) {
-  const trendTone = summary.trend.clearedCents < 0 ? "text-destructive" : "text-emerald-600";
+  const trendTone = summary.trend.clearedCents < 0 ? "text-destructive" : "text-positive";
   return (
     <div className="grid grid-cols-3 gap-2">
       <Figure

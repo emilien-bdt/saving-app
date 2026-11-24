@@ -6,7 +6,7 @@ import { Card } from "./card";
 
 export function IncomesCard({ dashboard }: { dashboard: Dashboard }) {
   return (
-    <Card title="Apports" aside={<span className="font-medium text-emerald-600 tabular-nums">{formatCents(dashboard.income.projectedCents)}</span>}>
+    <Card title="Apports" aside={<span className="font-medium text-positive tabular-nums">{formatCents(dashboard.income.projectedCents)}</span>}>
       {dashboard.incomes.length === 0 ? (
         <p className="text-sm text-muted-foreground">Aucun apport ce mois-ci.</p>
       ) : (

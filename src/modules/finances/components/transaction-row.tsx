@@ -30,7 +30,7 @@ function ComputedRow({ transaction, account }: Pick<Props, "transaction" | "acco
         <Percent className="size-4" aria-hidden />
       </span>
       <div className="flex min-w-0 flex-1 items-center gap-3 py-2 pr-2">
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-positive text-card">
           <PiggyBank className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
@@ -39,7 +39,7 @@ function ComputedRow({ transaction, account }: Pick<Props, "transaction" | "acco
             {[planned ? "à venir d'ici la fin du mois" : "calculés chaque jour", account?.displayName].filter(Boolean).join(" · ")}
           </span>
         </span>
-        <span className={`shrink-0 font-medium text-emerald-600 tabular-nums ${planned ? "opacity-60" : ""}`}>
+        <span className={`shrink-0 font-medium text-positive tabular-nums ${planned ? "opacity-60" : ""}`}>
           {formatTransactionAmount(transaction.amountCents, transaction.type)}
         </span>
       </div>
@@ -81,7 +81,7 @@ function StoredRow({ transaction, account, toAccount, category, showAccount, onO
           </span>
         </span>
         <span
-          className={`shrink-0 font-medium tabular-nums ${transaction.type === "INCOME" ? "text-emerald-600" : ""} ${transaction.status === "PLANNED" ? "opacity-60" : ""}`}
+          className={`shrink-0 font-medium tabular-nums ${transaction.type === "INCOME" ? "text-positive" : ""} ${transaction.status === "PLANNED" ? "opacity-60" : ""}`}
         >
           {formatTransactionAmount(transaction.amountCents, transaction.type)}
         </span>

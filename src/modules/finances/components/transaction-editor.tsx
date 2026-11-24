@@ -324,7 +324,7 @@ export function TransactionEditor({ transaction, options, defaultDate, onClose }
                   type="button"
                   aria-pressed={values.status === "CLEARED"}
                   onClick={() => set({ status: values.status === "CLEARED" ? "PLANNED" : "CLEARED" })}
-                  className="h-11 rounded-lg border text-base font-normal aria-pressed:border-emerald-600 aria-pressed:text-emerald-700"
+                  className="h-11 rounded-lg border text-base font-normal aria-pressed:border-positive aria-pressed:text-positive"
                 >
                   {values.status === "CLEARED" ? "✓ Pointée" : "Prévue"}
                 </button>
@@ -348,7 +348,7 @@ export function TransactionEditor({ transaction, options, defaultDate, onClose }
                 {formError}
               </p>
             ) : savedCount > 0 ? (
-              <p role="status" className="text-sm text-emerald-700">
+              <p role="status" className="text-sm text-positive">
                 {savedCount} transaction{savedCount > 1 ? "s" : ""} ajoutée{savedCount > 1 ? "s" : ""} ✓
               </p>
             ) : null}

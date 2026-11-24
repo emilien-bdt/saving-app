@@ -23,7 +23,7 @@ export function TaskCheck({ id, done, title }: { id: string; done: boolean; titl
       className="inline-flex size-11 shrink-0 items-center justify-center rounded-full hover:bg-muted"
     >
       {optimisticDone ? (
-        <CircleCheckBig className="size-6 text-emerald-600" aria-hidden />
+        <CircleCheckBig className="size-6 text-positive" aria-hidden />
       ) : (
         <Circle className="size-6 text-muted-foreground" aria-hidden />
       )}

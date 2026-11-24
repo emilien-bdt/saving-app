@@ -18,7 +18,7 @@ export function ExpensesCard({ dashboard, monthParam }: { dashboard: Dashboard; 
         <p className="text-sm text-muted-foreground">
           <span className="font-medium text-foreground tabular-nums">{formatCents(dashboard.expense.projectedCents)}</span> dépensés
           {dashboard.previous.expenseCents > 0 ? (
-            <span className={delta > 0 ? "text-destructive" : "text-emerald-600"}> · {formatSignedCents(delta)} vs mois dernier</span>
+            <span className={delta > 0 ? "text-destructive" : "text-positive"}> · {formatSignedCents(delta)} vs mois dernier</span>
           ) : null}
         </p>
       </div>
@@ -63,7 +63,7 @@ export function ExpensesCard({ dashboard, monthParam }: { dashboard: Dashboard; 
                           </span>
                         ))}
                     {vsAverage !== null && Math.abs(vsAverage) >= 0.1 ? (
-                      <span className={vsAverage > 0 ? "text-destructive" : "text-emerald-600"}>
+                      <span className={vsAverage > 0 ? "text-destructive" : "text-positive"}>
                         {vsAverage > 0 ? "+" : "−"}
                         {percent(Math.abs(vsAverage))} vs moyenne
                       </span>

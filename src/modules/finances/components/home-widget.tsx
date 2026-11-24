@@ -33,7 +33,7 @@ export async function FinancesHomeWidget(): Promise<ReactNode> {
         <Figure
           label="Tendance"
           value={formatSignedCents(trend.clearedCents)}
-          tone={trend.clearedCents < 0 ? "text-destructive" : "text-emerald-600"}
+          tone={trend.clearedCents < 0 ? "text-destructive" : "text-positive"}
           hint={planned(trend.projectedCents, trend.clearedCents, formatSignedCents)}
         />
         <Figure

@@ -312,3 +312,26 @@
   padding: 0.55rem 0.7rem;
   border-radius: 1.25rem;
 }
+
+/*
+ * Until the Repas redesign (phase 3), the clay look stays light even when the
+ * device is in dark mode: light form controls and light theme tokens inside it.
+ */
+.clay-page,
+.clay-sheet {
+  color-scheme: light;
+  --background: #f2f2f7;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #0066cc;
+  --primary-foreground: #ffffff;
+  --muted: #e9e9ee;
+  --muted-foreground: #6c6c70;
+  --border: #dcdce1;
+  --input: #d1d1d6;
+  --destructive: #d70015;
+  --positive: #1e7f3e;
+}

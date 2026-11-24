@@ -87,7 +87,7 @@ export function TransactionsView({ transactions, view, options, defaultDate }: P
                         {group.plannedCount > 0 ? ` · ${group.plannedCount} prévue(s)` : ""}
                       </span>
                     </span>
-                    <span className={`shrink-0 font-medium tabular-nums ${group.type === "INCOME" ? "text-emerald-600" : ""}`}>
+                    <span className={`shrink-0 font-medium tabular-nums ${group.type === "INCOME" ? "text-positive" : ""}`}>
                       {formatTransactionAmount(group.totalCents, group.type)}
                     </span>
                   </summary>

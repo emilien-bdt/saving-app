@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 17 + mise en ligne).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 18a : couleurs iOS clair / sombre).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -11,9 +11,14 @@
 | Environnement | **En ligne** : https://save.emilienbourdet.fr (VPS OVH, compose principal de `/Serveur OVH - minecraft`, dossier `save` = clone git) ; mise à jour = `git pull` + `docker compose up -d --build save-migrate save-app` (voir `deploy/README.md`). Local (`npm run dev`) = tests uniquement. |
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
+| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : 18a faite, 18b à suivre |
 | Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
+
+### Apparence
+- Palette façon iOS, **clair / sombre selon le réglage de l'appareil** (étape 18a), police système ; barre d'état de l'iPhone assortie.
+- Repas garde son style « pâte à modeler », toujours en clair, jusqu'à sa refonte (phase 3).
 
 ### Accès
 - Connexion par mot de passe unique (`/login`), session de 30 jours, déconnexion dans Paramètres.
@@ -88,13 +93,20 @@
 
 ## Ce qui reste à faire (dans l'ordre)
 
+### Chantier prioritaire — refonte design + multi-comptes (cadré et validé le 24/11/2026)
+A. ~~Maquettes iPhone~~ (validées le 24/11/2026).
+B. **Socle design iOS (étape 18)** : ~~18a couleurs, police, clair / sombre~~ ; 18b navigation (onglets des apps en bas, grand titre, contrôle segmenté, « + » en haut à droite), `Sheet` qui monte du bas pour les 6 formulaires, composants communs, tirer pour rafraîchir, transitions ; 18c nouvel Accueil (widgets avec taille et ordre, Repas + Courses séparés, pastille profil).
+C. **Comptes, foyers, admin** : `User`, `Household`, invitations (admin → compte, membre → foyer), connexion email + mot de passe, page Admin (membres, modules par personne), Paramètres › Foyer (inviter, rejoindre, quitter) ; migration de mes données vers mon compte ; Repas / Courses / listes To do partagées rattachés au foyer, Finances et autres listes à la personne.
+D. **Refonte module par module** : Repas (vue jour par jour sur iPhone), To do, Finances (Piloter repensé pour l'iPhone) ; gestes balayer pour cocher / supprimer.
+
+### Ensuite
 0. **Valider à l'écran** l'Accueil et To do (Repas validé le 24/11/2026).
 0 bis. **Repas** : remplir les quantités pour 2 dans Plats (les suggestions Excel n'en ont souvent pas) et les conditionnements des ingrédients ; garder les fusions de plats lors d'un réimport.
 1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
 4. **Vue annuelle** (remplace l'onglet `stats` de l'Excel).
-6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), To do : tâches récurrentes / sous-tâches, Repas : option Gemini (gratuit).
+6. Plus tard : actions depuis Piloter (pointer, ajouter dans un bloc), To do : tâches récurrentes / sous-tâches, Repas : option Gemini (gratuit), envoi des invitations par email, chiffrement des données perso, quitter un foyer avec une copie.
 
 ## Limites connues
 
@@ -138,3 +150,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 16 bis | `de930f5` | Repas = plat + accompagnements (découpe à l'import, génération avec accompagnements habituels) |
 | 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
 | — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
+| 18a | (ce commit) | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |

@@ -68,7 +68,7 @@ export function HistoryChart({ history }: { history: MonthPoint[] }) {
               y={positive ? zero - height : zero}
               height={height}
               rx="3"
-              className={positive ? "fill-emerald-500" : "fill-red-500"}
+              className={positive ? "fill-positive" : "fill-destructive"}
             >
               {/* <title> must have a single text child (React 19), hence one template string. */}
               <title>

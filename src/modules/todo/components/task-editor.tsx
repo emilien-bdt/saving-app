@@ -198,7 +198,7 @@ export function TaskEditor({ task, lists, onClose }: Props) {
 
             {formError && Object.keys(errors).length === 0 ? <p className="text-sm text-destructive">{formError}</p> : null}
             {savedCount > 0 ? (
-              <p className="text-sm text-emerald-600" aria-live="polite">
+              <p className="text-sm text-positive" aria-live="polite">
                 {savedCount === 1 ? "1 tâche ajoutée" : `${savedCount} tâches ajoutées`}
               </p>
             ) : null}

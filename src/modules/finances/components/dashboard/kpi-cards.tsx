@@ -6,7 +6,7 @@ import { formatSignedCents, monthName } from "../format";
 type Kpi = { label: string; cents: number; projectedCents: number; deltaCents: number; signed?: boolean; hint: string };
 
 function KpiCard({ label, cents, projectedCents, deltaCents, signed, hint }: Kpi) {
-  const tone = signed ? (cents < 0 ? "text-destructive" : "text-emerald-600") : "";
+  const tone = signed ? (cents < 0 ? "text-destructive" : "text-positive") : "";
   const DeltaIcon = deltaCents >= 0 ? TrendingUp : TrendingDown;
   return (
     <div className="rounded-xl border bg-card p-4">
@@ -14,7 +14,7 @@ function KpiCard({ label, cents, projectedCents, deltaCents, signed, hint }: Kpi
       <p className={`mt-1 text-xl font-semibold sm:text-2xl tabular-nums ${tone}`}>{signed ? formatSignedCents(cents) : formatCents(cents)}</p>
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {deltaCents !== 0 ? (
-          <span className={`inline-flex items-center gap-1 ${deltaCents >= 0 ? "text-emerald-600" : "text-destructive"}`}>
+          <span className={`inline-flex items-center gap-1 ${deltaCents >= 0 ? "text-positive" : "text-destructive"}`}>
             <DeltaIcon className="size-3.5" aria-hidden />
             {formatSignedCents(deltaCents)} {hint}
           </span>

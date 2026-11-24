@@ -11,7 +11,7 @@ function Evolution({ startCents, balance }: { startCents: number; balance: Balan
     <div className="flex justify-between gap-2 text-xs text-muted-foreground tabular-nums">
       <span>
         Début {formatCents(startCents)}
-        {delta !== 0 ? <span className={delta > 0 ? "text-emerald-600" : "text-destructive"}> ({formatSignedCents(delta)})</span> : null}
+        {delta !== 0 ? <span className={delta > 0 ? "text-positive" : "text-destructive"}> ({formatSignedCents(delta)})</span> : null}
       </span>
       {balance.projectedCents !== balance.clearedCents ? <span>Prévu {formatCents(balance.projectedCents)}</span> : null}
     </div>
