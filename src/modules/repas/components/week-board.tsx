@@ -11,6 +11,7 @@ import {
   LockOpen,
   Moon,
   RefreshCw,
+  ShoppingBasket,
   Soup,
   Sparkles,
   Sun,
@@ -269,6 +270,10 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
           </Link>
         </div>
         <div className="flex flex-wrap items-center gap-3 pb-1">
+          <Link href={`/repas/courses?semaine=${week}`} className={`${clay.btn} ${clay.btnPlain}`}>
+            <ShoppingBasket className="size-5" aria-hidden />
+            Courses
+          </Link>
           {meals.length > 0 ? (
             <button
               type="button"

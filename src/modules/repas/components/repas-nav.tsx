@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CalendarDays, Settings } from "lucide-react";
+import { BookOpen, CalendarDays, Settings, ShoppingBasket } from "lucide-react";
 import { useState } from "react";
 import type { NavApp } from "@/modules/types";
 import { todayIso } from "@/shared/lib/today";
@@ -10,6 +10,7 @@ import { MealEditor } from "./meal-editor";
 
 const LINKS: ModuleNavLink[] = [
   { href: "/repas", label: "Semaine", icon: CalendarDays, exact: true },
+  { href: "/repas/courses", label: "Courses", icon: ShoppingBasket },
   { href: "/repas/plats", label: "Plats", icon: BookOpen },
   { href: "/repas/parametres", label: "Paramètres", icon: Settings },
 ];

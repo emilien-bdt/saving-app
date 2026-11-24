@@ -96,10 +96,13 @@ model RepasIngredient {
   packAmount Int?
   /// Side item (chips, salade…): split from dish names, offered in the meal editor.
   side       Boolean               @default(false)
+  /// Staple (lait, beurre…): added to the shopping list in one tap.
+  staple     Boolean               @default(false)
   createdAt  DateTime              @default(now())
   updatedAt  DateTime              @updatedAt
   dishes     RepasDishIngredient[]
   meals      RepasMealSide[]
+  shopping   RepasShoppingItem[]
 
   @@map("repas_ingredient")
 }
@@ -134,4 +137,34 @@ model RepasMealSide {
   @@unique([mealId, ingredientId])
   @@index([ingredientId])
   @@map("repas_meal_side")
+}
+
+enum RepasShoppingSource {
+  /// Computed from the week's meals (the row only stores what was done on the line).
+  MEALS
+  /// Basic added in one tap.
+  STAPLE
+  /// Typed by hand.
+  MANUAL
+}
+
+/// One line of a week's shopping list, per ingredient.
+model RepasShoppingItem {
+  id           String              @id @default(cuid())
+  /// Monday of the week.
+  weekStart    DateTime            @db.Date
+  ingredientId String
+  ingredient   RepasIngredient     @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  source       RepasShoppingSource
+  /// Quantity set by hand (in the ingredient's unit); null = computed / unknown.
+  amount       Int?
+  checked      Boolean             @default(false)
+  /// "Déjà au placard": a computed line not to buy.
+  removed      Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([weekStart, ingredientId])
+  @@index([ingredientId])
+  @@map("repas_shopping_item")
 }
