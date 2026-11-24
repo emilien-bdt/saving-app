@@ -149,4 +149,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
 | — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
 | 18a | `28a9649` | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |
-| 18 | (ce commit) | Style iOS sur tout le site : onglets des apps, grand titre, contrôle segmenté, `Sheet` (glisser pour fermer), tirer pour rafraîchir, Accueil en cartes (Repas, To do, Finances, Courses), Repas jour par jour sur iPhone, fin du style pâte à modeler |
+| 18 | `77486af` | Style iOS sur tout le site : onglets des apps, grand titre, contrôle segmenté, `Sheet` (glisser pour fermer), tirer pour rafraîchir, Accueil en cartes (Repas, To do, Finances, Courses), Repas jour par jour sur iPhone, fin du style pâte à modeler |
