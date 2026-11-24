@@ -175,4 +175,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 19 | `eef8e9e` | Photo des plats (table `repas_dish_photo`, redimensionnement navigateur, route privée versionnée) |
 | 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
 | 21 | `f68309f` | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |
-| 22 | _à venir_ | Import des relevés BoursoBank (CSV « ; »), module `import/bank` commun, date « à partir du », lignes avant l'ouverture du compte ignorées |
+| 22 | `a4dbad2` | Import des relevés BoursoBank (CSV « ; »), module `import/bank` commun, date « à partir du », lignes avant l'ouverture du compte ignorées |
