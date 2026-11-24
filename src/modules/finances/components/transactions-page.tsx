@@ -1,4 +1,6 @@
+import { FileUp } from "lucide-react";
 import { cookies } from "next/headers";
+import Link from "next/link";
 import { requireSession } from "@/shared/auth/server";
 import { todayIso } from "@/shared/lib/today";
 import { getTransactionFormOptions } from "../data/form-options";
@@ -47,7 +49,13 @@ export async function TransactionsPage({ searchParams }: Props) {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="sr-only">Journal</h1>
         <MonthNav month={month} currentMonth={currentMonth} params={plainParams} />
-        <ViewToggle view={view} />
+        <span className="flex items-center gap-2">
+          <Link href="/finances/import" className="inline-flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm font-semibold text-primary hover:bg-muted">
+            <FileUp className="size-4" aria-hidden />
+            Importer
+          </Link>
+          <ViewToggle view={view} />
+        </span>
       </header>
       <MonthSummary summary={summarizeMonth(transactions)} />
       <TransactionFilters filters={filters} accounts={options.accounts} categories={options.categories} />

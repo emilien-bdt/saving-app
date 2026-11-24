@@ -59,3 +59,7 @@ next-env.d.ts
 
 # Exports de base (pg_dump) : jamais commités
 *.dump
+
+# Relevés bancaires réels (CSV) : jamais commités (exemples anonymisés seulement)
+*.csv
+!src/**/__fixtures__/*.csv

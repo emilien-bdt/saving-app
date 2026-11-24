@@ -24,6 +24,12 @@ enum TransactionStatus {
   CLEARED
 }
 
+/// Origin of an import batch: the former Excel file (command line) or a Revolut CSV statement (Finances › Importer).
+enum ImportSource {
+  EXCEL
+  REVOLUT
+}
+
 enum RecurrenceFrequency {
   MONTHLY
   YEARLY
@@ -113,7 +119,8 @@ model Transaction {
   importBatchId   String?
   /// Deleting an import batch removes its transactions (undo an import).
   importBatch     ImportBatch?      @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
-  /// Source position in the Excel file (file/sheet/cell/index): makes re-imports idempotent.
+  /// Excel: source position (file/sheet/cell/index); Revolut: « revolut:<hash> » of the statement row
+  /// (also set on a manual entry recognised in a statement). Makes re-imports idempotent.
   importRef       String?           @unique
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -179,6 +186,7 @@ model ImportBatch {
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   fileName     String
+  source       ImportSource  @default(EXCEL)
   importedAt   DateTime      @default(now())
   rowCount     Int
   transactions Transaction[]

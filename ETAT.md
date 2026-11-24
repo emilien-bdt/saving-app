@@ -1,6 +1,6 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étapes 19 photos des plats et 20 comptes / foyers).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 24/11/2026, étape 21 import des relevés Revolut).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
@@ -11,8 +11,8 @@
 | Environnement | **En ligne** : https://save.emilienbourdet.fr (VPS OVH, compose principal de `/Serveur OVH - minecraft`, dossier `save` = clone git) ; mise à jour = `git pull` + `docker compose up -d --build save-migrate save-app` (voir `deploy/README.md`). Local (`npm run dev`) = tests uniquement. |
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
-| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : design (18), photos (19) et comptes / foyers (20) faits ; migrations 19-20 à appliquer en local puis sur le serveur |
-| Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
+| Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : design (18), photos (19), comptes / foyers (20) et import Revolut (21) faits ; migrations 19-21 à appliquer en local puis sur le serveur |
+| Tests | 280 tests de logique (Vitest), lint et typecheck au vert |
 
 ## Ce qui fonctionne
 
@@ -59,9 +59,23 @@
 - Pointage en un geste ; modification et suppression d'une transaction.
 - Ligne calculée **Intérêts** par compte d'épargne (gagnés jusqu'à hier + à venir d'ici la fin du mois), non modifiable.
 
+### Importer un relevé Revolut — `/finances/import` (étape 21)
+- Accès : Journal › « Importer », ou Paramètres › « Importer un relevé Revolut ».
+- Fichier CSV exporté de l'app Revolut (Comptes › ⋯ › Relevé › Excel) : export des opérations (tous les produits : « Valeur actuelle », « Dépôt »…) ou relevé d'un compte d'épargne ; en-têtes français ou anglais.
+- **Aperçu avant tout enregistrement** : compte choisi pour chaque produit Revolut (proposé : Compte Courant, épargne nommée dans les libellés), puis :
+  - **Nouvelles** (cochées par défaut) avec catégorie proposée : habituelle d'après l'historique des libellés, sinon « devinée » (commerçants courants) ou « à vérifier » (Autres dépenses / Apports), modifiable ;
+  - **Déjà saisies** : même compte, même type, même montant, à 3 jours près (même mois pour une saisie « sans jour ») → gardent libellé et catégorie, prennent la date de la banque et sont pointées (les opérations prévues par une récurrence le seront aussi) ;
+  - **En attente → passées** : pointées ; **À retirer** : opérations en attente importées plus tôt que la banque ne montre plus (annulées, montant changé) ;
+  - ignorées : intérêts (calculés par l'app), opérations refusées / annulées, autres devises.
+- Virements internes : les deux côtés (même heure, montants opposés) ou un libellé qui nomme un autre compte deviennent **un seul virement**.
+- Opérations en attente importées en « prévue », pointées au prochain import.
+- Ré-import sans doublon (référence unique par ligne du relevé) ; les relevés qui se chevauchent sont reconnus.
+- **Derniers imports** : « Annuler » supprime les opérations ajoutées par cet import (les saisies reconnues restent pointées).
+
 ### Paramètres — `/finances/parametres`
 - **Comptes** : ajouter un compte (courant, épargne) ou un pocket, renommer, couleur, icône, archiver / désarchiver, supprimer s'il n'a jamais servi, ordre ↑↓. Un nouveau compte démarre à 0 €.
 - **Intérêts journaliers** (comptes d'épargne) : historique des taux « à partir du », ajout ou suppression même dans le passé ; taux en cours affiché dans la liste.
+- Lien vers l'import d'un relevé Revolut.
 - Catégories (**lecture seule** pour l'instant), déconnexion.
 
 ### To do — `/todo`
@@ -115,7 +129,8 @@ D. **Finitions par module** : Piloter repensé pour l'iPhone (graphiques), geste
 - Les montants négatifs ne sont pas saisissables (un remboursement = un revenu).
 - Les catégories ne se modifient pas encore depuis l'app (seulement via `npm run db:studio`).
 - Le solde initial d'un compte ne se modifie pas (choix) : on corrige par une opération ou un virement.
-- Intérêts : base 365 jours (années bissextiles comprises), avant impôts ; un écart de quelques centimes avec Revolut reste possible.
+- Intérêts : base 365 jours (années bissextiles comprises), avant impôts ; un écart de quelques centimes avec Revolut reste possible (Revolut verse des intérêts nets de frais : les lignes « Intérêts » des relevés ne sont pas importées).
+- Import Revolut : le libellé est nettoyé (« Paiement envoyé par OPEN SAS » → « Open SAS ») mais pas renommé ; une catégorie corrigée dans le Journal sert de modèle aux imports suivants.
 - Environnement de Claude : pas d'installation de paquets, ni de Vitest natif (tests lancés avec Node), ni de `prisma generate` / `next typegen` ; l'app réelle se teste sur le Mac.
 - Le projet est dans `Documents` (synchronisé iCloud) : iCloud peut retirer du disque des fichiers de `.git` (« Bus error » / « Resource deadlock avoided » côté Claude). Les retélécharger avant un commit ; à terme, sortir le projet du dossier synchronisé.
 
@@ -156,3 +171,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | — | `f8e3fbc` | Design iOS : corrections après contrôle à l'écran (débordement Piloter, boutons Repas) |
 | 19 | `eef8e9e` | Photo des plats (table `repas_dish_photo`, redimensionnement navigateur, route privée versionnée) |
 | 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
+| 21 | _à venir_ | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |

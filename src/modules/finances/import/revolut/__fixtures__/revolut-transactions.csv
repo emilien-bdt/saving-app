@@ -1,0 +1,14 @@
+Type,Produit,Date de début,Date de fin,Description,Montant,Frais,Devise,État,Solde
+Intérêts,Dépôt,2026-11-06 05:09:23,2026-11-06 05:09:23,"Intérêts nets versés pour Matelas de sécurité le Nov 6, 2026",0.11,0.03,EUR,TERMINÉ,2256.71
+Virement,Dépôt,2026-11-23 22:10:11,2026-11-23 22:10:11,À partir de EUR Matelas de sécurité,-500.00,0.00,EUR,TERMINÉ,1757.91
+Paiement par carte,Valeur actuelle,2026-11-05 20:22:09,2026-11-06 11:23:41,Au Tour Du Monde,-25.90,0.00,EUR,TERMINÉ,397.16
+Virement,Valeur actuelle,2026-11-06 01:00:00,2026-11-06 13:25:38,EDF clients particuliers,-75.00,0.00,EUR,TERMINÉ,322.16
+Paiement par carte,Valeur actuelle,2026-11-08 22:09:38,,Boutique Exemple,-47.94,0.00,EUR,RENVOYÉ,
+Ajout de fonds,Valeur actuelle,2026-11-09 02:54:53,2026-11-09 02:54:53,Paiement envoyé par OPEN SAS,15.00,0.00,EUR,TERMINÉ,337.16
+Paiement par carte,Valeur actuelle,2026-11-09 00:42:28,2026-11-10 10:58:04,Magasin U,-47.59,0.00,EUR,TERMINÉ,289.57
+Paiement par carte,Valeur actuelle,2026-11-20 20:39:26,2026-11-21 10:18:43,Spotify,-17.20,0.00,EUR,TERMINÉ,272.37
+Virement,Valeur actuelle,2026-11-23 22:10:11,2026-11-23 22:10:11,À partir de EUR Matelas de sécurité,500.00,0.00,EUR,TERMINÉ,772.37
+Paiement par carte,Valeur actuelle,2026-11-23 22:17:11,,Amazon,-169.89,0.00,EUR,EN ATTENTE,
+Virement,Valeur actuelle,2026-11-24 10:15:50,2026-11-24 10:15:51,Virement à : JEAN DUPONT & MARIE MARTIN,-12.50,0.00,EUR,TERMINÉ,759.87
+Paiement par carte,Valeur actuelle,2026-11-24 11:00:00,2026-11-24 12:00:00,"Café ""Le Coin"", Paris",-4.20,0.00,EUR,TERMINÉ,755.67
+Paiement par carte,Valeur actuelle,2026-11-24 12:00:00,2026-11-24 13:00:00,Duty Free,-10.00,0.00,USD,TERMINÉ,0

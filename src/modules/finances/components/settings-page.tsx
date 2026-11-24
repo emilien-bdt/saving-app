@@ -1,5 +1,8 @@
+import { ChevronRight, FileUp } from "lucide-react";
+import Link from "next/link";
 import { LogoutButton } from "@/shared/auth/components/logout-button";
 import { requireSession } from "@/shared/auth/server";
+import { ios } from "@/shared/ui/ios";
 import { getAccountsForSettings } from "../data/accounts";
 import { getTransactionFormOptions } from "../data/form-options";
 import { CategoryIcon } from "./category-icon";
@@ -21,6 +24,14 @@ export async function SettingsPage() {
       </p>
 
       <AccountsSettings accounts={accounts} />
+
+      <div className={ios.group}>
+        <Link href="/finances/import" className={ios.rowButton}>
+          <FileUp className="size-5 text-primary" aria-hidden />
+          <span className="flex-1">Importer un relevé Revolut</span>
+          <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+        </Link>
+      </div>
 
       <section className="rounded-2xl bg-card p-4">
         <h2 className="mb-2 text-[17px] font-semibold">Catégories</h2>
