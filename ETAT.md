@@ -150,4 +150,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 16 bis | `de930f5` | Repas = plat + accompagnements (découpe à l'import, génération avec accompagnements habituels) |
 | 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
 | — | `df397fc` | Mise en ligne (24/11/2026) : serveur passé en clone git, base locale restaurée sur le serveur |
-| 18a | (ce commit) | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |
+| 18a | `28a9649` | Design iOS : palette clair / sombre selon l'appareil, police système, couleurs sémantiques (`positive`, `warning`, couleurs d'app) |
