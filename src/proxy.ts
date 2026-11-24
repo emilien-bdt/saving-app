@@ -21,5 +21,5 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Public assets: Next internals, icons and the PWA manifest (iOS fetches it without cookies).
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons/|apple-icon|manifest.webmanifest).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|icons/|apple-icon|manifest.webmanifest).*)"],
 };
