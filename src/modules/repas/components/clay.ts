@@ -29,4 +29,7 @@ export const clay = {
   iconBtnSm: "clay-icon-btn-sm",
   btnSm: "clay-btn-sm",
   chipSm: "clay-chip-sm",
+  tint: "clay-tint",
+  tintTitle: "clay-tint-title",
+  mealTight: "clay-meal-tight",
 } as const;

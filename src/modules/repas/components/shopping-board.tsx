@@ -2,7 +2,7 @@
 
 import { Check, ChevronLeft, ChevronRight, Circle, CircleCheckBig, ClipboardCopy, ExternalLink, Plus, RotateCcw, Share2, ShoppingBasket, Undo2, X } from "lucide-react";
 import Link from "next/link";
-import { useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
+import { type CSSProperties, useOptimistic, useState, useSyncExternalStore, useTransition } from "react";
 import {
   addShoppingItem,
   removeItem,
@@ -16,6 +16,7 @@ import { AISLES, UNITS } from "../domain/ingredients";
 import { coursesUSearchUrl, lineQuantity, type ShoppingLine, shoppingText } from "../domain/shopping";
 import type { SideOption } from "../view-models";
 import { clay } from "./clay";
+import { AISLE_LOOK } from "./labels";
 
 type Props = {
   week: string;
@@ -290,14 +291,21 @@ export function ShoppingBoard({ week, title, previousWeek, nextWeek, lines, stap
           Rien à acheter : remplis la semaine, ajoute les ingrédients des plats ou tape un basique.
         </p>
       ) : (
-        <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {AISLES.map((aisle) => {
             const inAisle = active.filter((line) => line.aisle === aisle.id);
             if (inAisle.length === 0) return null;
             return (
-              <section key={aisle.id} className={`${clay.day} ${clay.dayTight}`} aria-labelledby={`aisle-${aisle.id}`}>
-                <h2 id={`aisle-${aisle.id}`} className="mb-0.5 px-1 text-sm font-extrabold tracking-wide uppercase opacity-80">
-                  {aisle.label} <span className="text-sm font-semibold opacity-60">· {inAisle.filter((line) => !line.checked).length}</span>
+              <section
+                key={aisle.id}
+                style={{ "--hue": AISLE_LOOK[aisle.id]?.hue ?? 60 } as CSSProperties}
+                className={`${clay.day} ${clay.tint} ${clay.dayTight} min-h-36`}
+                aria-labelledby={`aisle-${aisle.id}`}
+              >
+                <h2 id={`aisle-${aisle.id}`} className={`${clay.tintTitle} mb-1`}>
+                  <span aria-hidden>{AISLE_LOOK[aisle.id]?.emoji}</span>
+                  {aisle.label}
+                  <span className="opacity-60">· {inAisle.filter((line) => !line.checked).length}</span>
                 </h2>
                 <ul>{inAisle.map(row)}</ul>
               </section>

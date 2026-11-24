@@ -148,7 +148,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
 
     if (!meal) {
       return (
-        <div data-slot-key={key} className={`${clay.empty} ${isOver ? clay.over : ""} flex min-h-32 flex-col p-3`}>
+        <div data-slot-key={key} className={`${clay.empty} ${isOver ? clay.over : ""} flex h-full min-h-40 flex-col p-3`}>
           <span className={clay.slotLabel}>
             <SlotIcon slot={slot} />
             {SLOT_LABELS[slot]}
@@ -177,7 +177,7 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
     ].join(" ");
 
     return (
-      <div data-slot-key={key} style={style} className={`${classes} flex min-h-32 flex-col`}>
+      <div data-slot-key={key} style={style} className={`${classes} flex h-full min-h-40 flex-col`}>
         <span className={clay.slotLabel}>
           <SlotIcon slot={slot} />
           {SLOT_LABELS[slot]}
@@ -296,12 +296,12 @@ export function WeekBoard({ week, title, previousWeek, nextWeek, days, dayBefore
 
       <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
         {optimisticDays.map((day) => (
-          <li key={day.dateIso} className={`${clay.day} ${day.isToday ? clay.today : ""}`}>
+          <li key={day.dateIso} className={`${clay.day} ${day.isToday ? clay.today : ""} flex flex-col`}>
             <h2 className={`${clay.dayTitle} mb-3 px-1`}>
               {day.label}
               {day.isToday ? <span className="ml-1.5 text-sm font-semibold opacity-70">· aujourd&apos;hui</span> : null}
             </h2>
-            <div className="grid gap-3">
+            <div className="grid flex-1 auto-rows-fr gap-3">
               {cell(day, "LUNCH")}
               {cell(day, "DINNER")}
             </div>

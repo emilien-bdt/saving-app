@@ -57,10 +57,10 @@ export function DishesBoard({ dishes, ingredients }: { dishes: readonly DishItem
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold sm:text-3xl">Plats</h1>
+          <h1 className="text-xl font-extrabold sm:text-2xl">Plats</h1>
           <p className="text-sm font-medium opacity-70">
             Les ingrédients sont pour un repas à 2 ; ils servent à calculer la liste de courses.
           </p>
@@ -68,13 +68,13 @@ export function DishesBoard({ dishes, ingredients }: { dishes: readonly DishItem
         <label className="relative w-full max-w-sm">
           <span className="sr-only">Rechercher un plat</span>
           <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 opacity-60" aria-hidden />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un plat" className={`${clay.field} pl-10`} />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher un plat" className={`${clay.field} h-10 pl-10 text-sm`} />
         </label>
       </div>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filtre">
         {FILTERS.map((item) => (
-          <button key={item.id} type="button" aria-pressed={filter === item.id} onClick={() => setFilter(item.id)} className={clay.chip}>
+          <button key={item.id} type="button" aria-pressed={filter === item.id} onClick={() => setFilter(item.id)} className={`${clay.chip} ${clay.chipSm}`}>
             {item.label} · {counts[item.id]}
           </button>
         ))}
@@ -85,37 +85,37 @@ export function DishesBoard({ dishes, ingredients }: { dishes: readonly DishItem
       {shown.length === 0 ? (
         <p className={`${clay.empty} p-6 text-center font-semibold`}>Aucun plat ici.</p>
       ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
           {shown.map((dish) => {
             const suggested = dish.ingredients.filter((item) => item.suggested).length;
             return (
-              <li key={dish.id} style={{ "--hue": dishHue(dish.id) } as CSSProperties} className={`${clay.meal} ${dish.archived ? clay.proposed : ""} flex flex-col gap-2`}>
-                <button type="button" onClick={() => setEditingId(dish.id)} className="flex flex-1 flex-col gap-1 text-left">
-                  <span className={clay.mealTitle}>{dish.name}</span>
-                  <span className="text-sm font-medium opacity-75">
+              <li key={dish.id} style={{ "--hue": dishHue(dish.id) } as CSSProperties} className={`${clay.meal} ${clay.mealTight} ${dish.archived ? clay.proposed : ""} flex h-full min-h-28 flex-col gap-1.5`}>
+                <button type="button" onClick={() => setEditingId(dish.id)} className="flex flex-1 flex-col gap-0.5 text-left">
+                  <span className="line-clamp-2 text-[0.95rem] leading-tight font-bold">{dish.name}</span>
+                  <span className="text-xs font-medium opacity-75">
                     {dish.cooked > 0 ? `Cuisiné ${dish.cooked} fois` : "Jamais cuisiné"}
                     {dish.lastIso ? ` · dernier le ${formatDate(new Date(`${dish.lastIso}T12:00:00`))}` : ""}
                   </span>
                   {dish.ingredients.length > 0 ? (
-                    <span className="mt-1 line-clamp-2 text-sm">
+                    <span className="mt-0.5 line-clamp-2 text-xs">
                       {dish.ingredients
                         .map((item) => `${item.name}${item.amount !== null ? ` ${formatQuantity(item.amount, item.unit)}` : ""}`)
                         .join(" · ")}
                     </span>
                   ) : (
-                    <span className="mt-1 text-sm font-semibold opacity-80">Ingrédients à compléter</span>
+                    <span className="mt-0.5 text-xs font-semibold opacity-80">Ingrédients à compléter</span>
                   )}
                   {suggested > 0 ? (
-                    <span className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                    <span className="mt-0.5 inline-flex items-center gap-1 self-start rounded-full bg-amber-100 px-2 py-0.5 text-[0.7rem] font-bold text-amber-800">
                       <Sparkles className="size-3" aria-hidden />
                       {suggested} suggéré{suggested > 1 ? "s" : ""} à vérifier
                     </span>
                   ) : null}
                 </button>
                 {dish.duplicateOf ? (
-                  <button type="button" disabled={pending} onClick={() => quickMerge(dish)} className={`${clay.btn} ${clay.btnPlain} self-start text-sm`}>
-                    <Combine className="size-4" aria-hidden />
-                    Même plat que « {dish.duplicateOf.name} » ? Fusionner
+                  <button type="button" disabled={pending} onClick={() => quickMerge(dish)} className={`${clay.btn} ${clay.btnPlain} ${clay.btnSm} self-start text-xs`}>
+                    <Combine className="size-3.5" aria-hidden />
+                    = « {dish.duplicateOf.name} » ? Fusionner
                   </button>
                 ) : null}
               </li>

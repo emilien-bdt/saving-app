@@ -47,3 +47,18 @@ export function dishHue(dishId: string): number {
   for (const char of dishId) hash = (hash * 31 + char.charCodeAt(0)) % 9973;
   return FOOD_HUES[hash % FOOD_HUES.length] ?? 55;
 }
+
+/** Colour and emoji of each drive aisle (shopping list). */
+export const AISLE_LOOK: Record<string, { hue: number; emoji: string }> = {
+  FRUITS_LEGUMES: { hue: 140, emoji: "🥕" },
+  BOUCHERIE_POISSON: { hue: 25, emoji: "🥩" },
+  CHARCUTERIE_TRAITEUR: { hue: 355, emoji: "🥓" },
+  CREMERIE: { hue: 92, emoji: "🧀" },
+  EPICERIE_SALEE: { hue: 55, emoji: "🍝" },
+  EPICERIE_SUCREE: { hue: 320, emoji: "🍫" },
+  SURGELES: { hue: 230, emoji: "🧊" },
+  BOULANGERIE: { hue: 75, emoji: "🥖" },
+  BOISSONS: { hue: 200, emoji: "🧃" },
+  HYGIENE_ENTRETIEN: { hue: 280, emoji: "🧴" },
+  AUTRE: { hue: 60, emoji: "📦" },
+};
