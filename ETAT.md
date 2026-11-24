@@ -12,7 +12,7 @@
 | Git | branche `main`, poussée sur GitHub (`emilien-bdt/saving-app`) ; le serveur fait `git pull` |
 | Données | **Base de référence = serveur** (base locale copiée le 24/11/2026 : finances 921 transactions, To do, Repas 524 repas / 171 plats). Saisir en ligne ; ne plus restaurer la base locale sur le serveur. |
 | Chantier en cours | **Refonte design iOS + multi-comptes / foyers** (cadré le 24/11/2026) : design (18), photos (19), comptes / foyers (20), import Revolut (21) et BoursoBank (22) faits ; migration 22 à appliquer sur le serveur |
-| Tests | 293 tests de logique (Vitest), lint et typecheck au vert |
+| Tests | 290 tests de logique (Vitest), lint et typecheck au vert |
 
 ## Ce qui fonctionne
 
@@ -178,4 +178,4 @@ Puis http://localhost:3000 — Accueil. En usage réel : https://save.emilienbou
 | 20 | `ed37a81` | Comptes et foyers : connexion par email, sessions par personne, données rattachées à la personne ou au foyer, invitations, Réglages, Administration, listes To do partagées |
 | 21 | `f68309f` | Import des relevés Revolut (CSV) : aperçu, rapprochement avec les saisies, catégories proposées, virements internes, import annulable (`finances_import_batch.source`) |
 | 22 | `a4dbad2` | Import des relevés BoursoBank (CSV « ; »), module `import/bank` commun, date « à partir du », lignes avant l'ouverture du compte ignorées |
-| 22 bis | _à venir_ | Import : « Reprendre l'historique » (ouverture du compte avancée, solde initial calé sur le solde de la banque) |
+| 22 bis | `3677318` | Import : « Reprendre l'historique » (ouverture du compte avancée, solde initial calé sur le solde de la banque) |
