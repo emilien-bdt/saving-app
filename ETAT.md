@@ -1,17 +1,17 @@
 # État du site — Save
 
-> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 16).
+> Photo de l'avancement, mise à jour à chaque étape (dernière mise à jour : 23/11/2026, étape 17).
 > Les règles et décisions sont dans `CLAUDE.md` ; ce fichier dit **où on en est**.
 
 ## En bref
 
 | | |
 |---|---|
-| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille, génération, plats et ingrédients ; liste de courses à venir) |
+| Modules en service | **Accueil** (menu + tableau de bord), **Finances**, **To do**, **Repas** (grille, génération, plats et accompagnements, ingrédients, liste de courses) |
 | Environnement | Local (`npm run dev`, Postgres Docker) ; déploiement prêt pour https://save.emilienbourdet.fr (serveur perso, Docker + nginx) — **mise en ligne à faire** (`deploy/README.md`) |
 | Git | branche `main`, commits non poussés (`git push` à faire) |
 | Données | Excel 2024 → 2026 importé : 921 transactions (08/2024 → 12/2026), 6 comptes, soldes identiques à l'Excel (95/95 contrôles) |
-| Tests | 247 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
+| Tests | 255 tests de logique (Vitest), lint au vert ; typecheck à relancer sur le Mac après `npm run db:migrate` (client Prisma To do) |
 
 ## Ce qui fonctionne
 
@@ -77,6 +77,8 @@
 - Widget Accueil : midi, soir, demain soir, repas prévus / validés de la semaine.
 - Style « pâte à modeler » (feuille `components/clay.css`, classes `clay-*`), cases agrandies, bouton 🗑 sur chaque repas.
 - **Plats** (`/repas/plats`) : recherche, filtres (à compléter, doublons probables, archivés), fusion en un geste, éditeur (nom, ingrédients pour un repas à 2 avec quantité / unité / rayon du drive, archiver, fusionner, supprimer si jamais mangé). Ingrédients pré-remplis d'après les courses des Excel (« suggéré » à valider).
+- Repas = plat (facultatif) + **accompagnements** (chips, salade, concombre, feta…, liste dans Repas › Paramètres) ; la génération propose les accompagnements habituels du plat ; « Ce n'est pas un plat » dans Plats.
+- **Courses** (`/repas/courses?semaine=`) : liste calculée depuis les repas (1 repas + 1 par reste prévu, quantités additionnées, arrondi au conditionnement, accompagnements par repas), basiques d'un geste (liste dans Repas › Paramètres), ajout manuel, rangée par rayon du drive, cochable, quantité modifiable, « déjà au placard », lien de recherche Courses U, copier / partager ; affichage compact. Widget Accueil : articles à acheter.
 - Import des menus Excel : `npm run import:repas -- --replace ~/Documents/Ressources/Autres/Repas/*.xlsx` (48 fichiers → 47 semaines, 524 repas, 190 plats, 126 plats avec ingrédients suggérés) ; formats `repas-JJ-MM-AA` et `planning-menu-JJ-MM`.
 - ⚠️ Rendu pas encore validé à l'écran.
 
@@ -87,8 +89,7 @@
 ## Ce qui reste à faire (dans l'ordre)
 
 0. **Valider à l'écran** l'Accueil, To do et Repas (`npm run db:migrate`, puis `npm run import:repas`).
-0 bis. **Repas — liste de courses** (étape 17) : calculée depuis les repas (1 repas + 1 par reste prévu, quantités additionnées, arrondi au conditionnement), basiques ajoutés d'un geste (liste dans Repas › Paramètres), ajout manuel, cochable, rangée par rayon du drive ; fusions de plats mémorisées pour les réimports.
-0 ter. **Repas — export** (étape 18) : liens Courses U par article, copier / partager, widget Accueil.
+0 bis. **Repas** : remplir les quantités pour 2 dans Plats (les suggestions Excel n'en ont souvent pas) et les conditionnements des ingrédients ; garder les fusions de plats lors d'un réimport.
 1. **Budgets** : un montant par catégorie (valable à partir d'un mois), écran Paramètres › Budgets avec proposition = moyenne 6 mois, consommé / reste / projection dans Piloter.
 2. **Catégories modifiables** : nom, couleur, icône, sous-catégories.
 3. **Récurrences** : Paramètres › Récurrences, génération des opérations prévues en début de mois (le modèle `RecurringRule` existe déjà en base).
@@ -135,3 +136,5 @@ Puis http://localhost:3000 — Accueil (ou http://192.168.1.28:3000 depuis l'iPh
 | — | `9f5b2ef` | Import repas : format planning-menu, jour sur un chiffre, « (reste) » |
 | 15 | `df9c2e7` | Repas : style pâte à modeler, affichage agrandi, bouton supprimer (+ `e0cb601` feuille globale `clay-`) |
 | 16 | `777df49` | Plats et ingrédients : catalogue (rayon, unité, conditionnement), fusion des doublons, suggestions Excel |
+| 16 bis | `de930f5` | Repas = plat + accompagnements (découpe à l'import, génération avec accompagnements habituels) |
+| 17 | `46ef92a` | Liste de courses de la semaine (calculée, basiques, manuel, rayons du drive, Courses U) + `1c00831` affichage compact |
